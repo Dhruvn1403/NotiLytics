@@ -1,5 +1,24 @@
-@()
+@(articles: List[controllers.HomeController.Article])
 
-@main("Welcome to Play") {
-  <h1>Welcome to Play!</h1>
+@main("NotiLytics") {
+<div style="width: 60%; margin: auto; padding: 20px;">
+    <h2>NotiLytics</h2>
+
+    <form action="/search" method="get">
+        <input type="text" name="query" placeholder="Search keyword..." required style="width: 80%;" />
+        <button type="submit">Search</button>
+    </form>
+
+    @if(!articles.isEmpty) {
+    <ul>
+        @for(article <- articles) {
+        <li>
+            <a href="@article.getUrl()" target="_blank">@article.getTitle()</a><br>
+            Source: <a href="@article.getSourceUrl()" target="_blank">@article.getSourceName()</a><br>
+            Published: @article.getPublishedAt()<br>
+        </li>
+        }
+    </ul>
+    }
+</div>
 }
