@@ -2,11 +2,11 @@ package modules;
 
 import com.google.inject.AbstractModule;
 import services.NewsApiClient;
-import services.NewsApiClientStub;  // use the stub first so everything runs
+import services.NewsApiClientImpl;
 
 public class Module extends AbstractModule {
     @Override
     protected void configure() {
-        bind(NewsApiClient.class).to(NewsApiClientStub.class);
+        bind(NewsApiClient.class).to(NewsApiClientImpl.class);
     }
 }
