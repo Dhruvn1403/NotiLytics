@@ -1,27 +1,39 @@
 @(info: models.SourceInfo)
-@main("Source: " + info.name()) {
+
+@main(info.name()) {
+
 <h1>@info.name()</h1>
+
+@if(info.description() != null && !info.description().isEmpty) {
 <p>@info.description()</p>
+}
 
-<div>
+<p>
     <b>URL:</b>
-    @if(info.url()!=null && !info.url().isBlank()){
+    @if(info.url() != null && !info.url().isEmpty) {
     <a href='@info.url()' target="_blank">@info.url()</a>
-    } else { <em>n/a</em> }
-    <br/><b>Category:</b> @info.category()
-    &nbsp;|&nbsp;<b>Language:</b> @info.language()
-    &nbsp;|&nbsp;<b>Country:</b> @info.country()
-</div>
+    } else {
+    n/a
+    }
+    <br/>
+    <b>Category:</b> @info.category()
+    &nbsp;|&nbsp; <b>Language:</b> @info.language()
+    &nbsp;|&nbsp; <b>Country:</b> @info.country()
+</p>
 
-<h3 style="margin-top:1rem;">Latest 10 articles</h3>
-@if(info.latestArticles().isEmpty()) {
+<h2>Latest 10 articles</h2>
+
+@if(info.articles() == null || info.articles().isEmpty) {
 <em>No recent articles for this source.</em>
 } else {
 <ol>
-    @for(a <- info.latestArticles()) {
+    @for(a <- info.articles()) {
     <li>
         <a href='@a.url()' target="_blank">@a.title()</a>
-        <small>@if(a.publishedAtEt()!=null){ — @a.publishedAtEt().toString }</small>
+        @* show ET time if present (Article.publishedAtEt()) *@
+        @defining(a.publishedAtEt()) { ts =>
+        @if(ts != null) { — @ts }
+        }
     </li>
     }
 </ol>

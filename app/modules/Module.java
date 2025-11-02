@@ -7,6 +7,14 @@ import services.NewsApiClientImpl;
 public class Module extends AbstractModule {
     @Override
     protected void configure() {
-        bind(NewsApiClient.class).to(NewsApiClientImpl.class);
+        // Bind the interface used in NotiController to its implementation
+        bind(NewsApiClient.class).to(NewsApiClientImpl.class).asEagerSingleton();
+
+        // If you ever want a stub when no key is set, replace the line above with:
+        // if (System.getenv("NEWSAPI_KEY") == null || System.getenv("NEWSAPI_KEY").isBlank()) {
+        //   bind(NewsApiClient.class).to(services.NewsApiClientStub.class).asEagerSingleton();
+        // } else {
+        //   bind(NewsApiClient.class).to(NewsApiClientImpl.class).asEagerSingleton();
+        // }
     }
 }

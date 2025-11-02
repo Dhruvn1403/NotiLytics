@@ -2,24 +2,20 @@ package services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.typesafe.config.Config;
-import models.Article;
-import models.SourceInfo;
-
 import play.libs.ws.WSClient;
 import play.libs.ws.WSRequest;
 import play.libs.ws.WSResponse;
 
-import util.TimeUtil;
-
 import javax.inject.Inject;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-public class NewsApiClientImpl implements NewsApiClient {
+import models.Article;
+import models.SourceInfo;
+
+public final class NewsApiClientImpl implements NewsApiClient {
 
     private final WSClient ws;
     private final String baseUrl;
@@ -28,99 +24,140 @@ public class NewsApiClientImpl implements NewsApiClient {
     @Inject
     public NewsApiClientImpl(WSClient ws, Config config) {
         this.ws = ws;
-        this.baseUrl = config.hasPath("newsapi.baseUrl")
-                ? config.getString("newsapi.baseUrl")
-                : "https://newsapi.org/v2";
-        this.apiKey = config.hasPath("newsapi.apiKey")
-                ? config.getString("newsapi.apiKey")
-                : "";
+        this.baseUrl = "https://newsapi.org/v2";
+
+        String fromEnv = System.getenv("NEWSAPI_KEY");
+        this.apiKey = (fromEnv != null && !fromEnv.isBlank())
+                ? fromEnv
+                : (config.hasPath("newsapi.key") ? config.getString("newsapi.key") : null);
+
+        System.out.println("NEWSAPI_KEY present? " + (this.apiKey != null && !this.apiKey.isBlank()));
     }
 
+    /** Attach API key via header and query param. */
+    private WSRequest withKey(WSRequest req) {
+        // addQueryParameter will encode automatically; do NOT pre-encode
+        return req.addHeader("X-Api-Key", apiKey == null ? "" : apiKey)
+                .addQueryParameter("apiKey", apiKey == null ? "" : apiKey);
+    }
+
+    /** Interface requires this signature. */
     @Override
     public CompletionStage<SourceInfo> sourceProfileByName(String sourceName) {
-        WSRequest reqSources = ws.url(baseUrl + "/top-headlines/sources")
-                .addHeader("X-Api-Key", apiKey);
+        WSRequest findReq = withKey(ws.url(baseUrl + "/top-headlines/sources")
+                .addQueryParameter("language", "en")
+                .addQueryParameter("country", "us"));
 
-        return reqSources.get()
-                .thenApply(WSResponse::asJson)
-                .thenCompose(json -> {
-                    if (json.has("status") && "error".equalsIgnoreCase(json.get("status").asText())) {
-                        return java.util.concurrent.CompletableFuture.completedFuture(
-                                new SourceInfo(null, sourceName,
-                                        json.has("message") ? json.get("message").asText() : "Not found",
-                                        "", "", "", "", List.of())
-                        );
+        return findReq.get().thenCompose(resp -> {
+            JsonNode root = handle(resp, "lookup-sources");
+            if (root == null) {
+                return java.util.concurrent.CompletableFuture.completedFuture(
+                        new SourceInfo(
+                                null,
+                                sourceName,
+                                "Your API key is invalid or incorrect. Check your key, or go to https://newsapi.org to create a free API key.",
+                                "", "", "", "", List.of()
+                        )
+                );
+            }
+
+            // Extract matching source
+            JsonNode sources = root.path("sources");
+            String id = null, name = null, desc = null, url = "", cat = "", lang = "", country = "";
+            if (sources.isArray()) {
+                for (JsonNode s : sources) {
+                    String n = s.path("name").asText("");
+                    if (n.equalsIgnoreCase(sourceName)) {
+                        id = s.path("id").asText("");
+                        name = n;
+                        desc = s.path("description").asText("");
+                        url = s.path("url").asText("");
+                        cat = s.path("category").asText("");
+                        lang = s.path("language").asText("");
+                        country = s.path("country").asText("");
+                        break;
                     }
+                }
+            }
 
-                    JsonNode sources = json.get("sources");
-                    JsonNode match = (sources == null) ? null :
-                            StreamSupport.stream(sources.spliterator(), false)
-                                    .filter(n -> n.hasNonNull("name")
-                                            && n.get("name").asText("").equalsIgnoreCase(sourceName))
-                                    .findFirst().orElse(null);
+            if (id == null || id.isBlank()) {
+                return java.util.concurrent.CompletableFuture.completedFuture(
+                        new SourceInfo(null, sourceName, "Not found", "", "", "", "", List.of())
+                );
+            }
 
-                    String id, desc, url, cat, lang, country;
+            // Make effectively-final copies for use inside lambda
+            final String fId = id;
+            final String fName = (name == null ? sourceName : name);
+            final String fDesc = desc;
+            final String fUrl = url;
+            final String fCat = cat;
+            final String fLang = lang;
+            final String fCountry = country;
 
-                    if (match == null) {
-                        id      = sourceName.toLowerCase(Locale.ROOT).replace(' ', '-');
-                        desc    = "Not found";
-                        url     = "";
-                        cat     = "";
-                        lang    = "";
-                        country = "";
-                    } else {
-                        id      = text(match, "id");
-                        desc    = text(match, "description");
-                        url     = text(match, "url");
-                        cat     = text(match, "category");
-                        lang    = text(match, "language");
-                        country = text(match, "country");
+            WSRequest artReq = withKey(ws.url(baseUrl + "/everything")
+                    .addQueryParameter("sources", fId)
+                    .addQueryParameter("pageSize", "10")
+                    .addQueryParameter("sortBy", "publishedAt"));
+
+            return artReq.get().thenApply(artResp -> {
+                JsonNode artRoot = handle(artResp, "fetch-articles");
+                List<Article> articles = new ArrayList<>();
+                if (artRoot != null) {
+                    JsonNode arr = artRoot.path("articles");
+                    if (arr.isArray()) {
+                        for (JsonNode a : arr) {
+                            String title = a.path("title").asText("");
+                            String aUrl = a.path("url").asText("");
+                            String author = a.path("author").asText("");
+                            String description = a.path("description").asText("");
+
+                            ZonedDateTime publishedAtEt = null;
+                            String published = a.path("publishedAt").asText(null);
+                            if (published != null && !published.isBlank()) {
+                                try { publishedAtEt = ZonedDateTime.parse(published); }
+                                catch (Exception ignore) { /* keep null */ }
+                            }
+
+                            articles.add(new Article(
+                                    title,
+                                    aUrl,
+                                    fName,
+                                    fUrl,
+                                    author,
+                                    description,
+                                    publishedAtEt
+                            ));
+                        }
                     }
-
-                    WSRequest reqArticles = ws.url(baseUrl + "/everything")
-                            .addHeader("X-Api-Key", apiKey)
-                            .addQueryParameter("sources", id)
-                            .addQueryParameter("pageSize", "10")
-                            .addQueryParameter("sortBy", "publishedAt");
-
-                    return reqArticles.get()
-                            .thenApply(WSResponse::asJson)
-                            .thenApply(articlesJson -> {
-                                if (articlesJson.has("status")
-                                        && "error".equalsIgnoreCase(articlesJson.get("status").asText())) {
-                                    return new SourceInfo(id, sourceName, desc, url, cat, lang, country, List.of());
-                                }
-
-                                JsonNode articlesArr = articlesJson.get("articles");
-                                List<Article> articles = (articlesArr == null) ? List.of() :
-                                        StreamSupport.stream(articlesArr.spliterator(), false)
-                                                .map(a -> {
-                                                    String title  = text(a, "title");
-                                                    String link   = text(a, "url");
-                                                    String sName  = a.path("source").path("name").asText("");
-                                                    String author = text(a, "author");
-                                                    String descA  = text(a, "description");
-                                                    String pub    = text(a, "publishedAt");
-                                                    ZonedDateTime et = pub.isBlank() ? null : TimeUtil.toET(pub);
-                                                    return new Article(title, link, sName, host(link), author, descA, et);
-                                                })
-                                                .collect(Collectors.toList());
-
-                                return new SourceInfo(id, sourceName, desc, url, cat, lang, country, articles);
-                            });
-                });
+                }
+                return new SourceInfo(fId, fName, fDesc, fUrl, fCat, fLang, fCountry, articles);
+            });
+        });
     }
 
-    private static String text(JsonNode n, String key) {
-        return (n != null && n.hasNonNull(key)) ? n.get(key).asText("") : "";
+    // ---- helpers ----
+    private JsonNode handle(WSResponse resp, String tag) {
+        int status = resp.getStatus();
+        JsonNode body = safeJson(resp);
+        String statusText = body != null ? body.path("status").asText("") : "";
+
+        if (status >= 200 && status < 300 && "ok".equalsIgnoreCase(statusText)) {
+            return body;
+        }
+
+        String code = body != null ? body.path("code").asText("") : "";
+        String message = body != null ? body.path("message").asText("") : "";
+        System.err.println("[NewsAPI/" + tag + "] HTTP " + status +
+                " status=" + statusText + " code=" + code + " msg=" + message);
+        return null;
     }
 
-    private static String host(String url) {
-        try {
-            java.net.URL u = new java.net.URL(url);
-            return u.getProtocol() + "://" + u.getHost();
-        } catch (Exception e) {
-            return "";
+    private JsonNode safeJson(WSResponse resp) {
+        try { return resp.asJson(); }
+        catch (Exception e) {
+            System.err.println("[NewsAPI] Non-JSON response: " + resp.getStatusText());
+            return null;
         }
     }
 }
