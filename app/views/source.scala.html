@@ -1,0 +1,29 @@
+@(info: models.SourceInfo)
+@main("Source: " + info.name()) {
+<h1>@info.name()</h1>
+<p>@info.description()</p>
+
+<div>
+    <b>URL:</b>
+    @if(info.url()!=null && !info.url().isBlank()){
+    <a href='@info.url()' target="_blank">@info.url()</a>
+    } else { <em>n/a</em> }
+    <br/><b>Category:</b> @info.category()
+    &nbsp;|&nbsp;<b>Language:</b> @info.language()
+    &nbsp;|&nbsp;<b>Country:</b> @info.country()
+</div>
+
+<h3 style="margin-top:1rem;">Latest 10 articles</h3>
+@if(info.latestArticles().isEmpty()) {
+<em>No recent articles for this source.</em>
+} else {
+<ol>
+    @for(a <- info.latestArticles()) {
+    <li>
+        <a href='@a.url()' target="_blank">@a.title()</a>
+        <small>@if(a.publishedAtEt()!=null){ — @a.publishedAtEt().toString }</small>
+    </li>
+    }
+</ol>
+}
+}
