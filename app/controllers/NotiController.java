@@ -1,12 +1,18 @@
 package controllers;
 
-import play.mvc.*;
-import services.NewsApiClient;
 import models.SourceInfo;
+import play.mvc.Controller;
+import play.mvc.Result;
+import services.NewsApiClient;
+import views.html.source;
 
 import javax.inject.Inject;
 import java.util.concurrent.CompletionStage;
 
+/**
+ * Controller for NotiLytics - Source Profile page.
+ * @author Manush Shah
+ */
 public class NotiController extends Controller {
 
     private final NewsApiClient news;
@@ -16,8 +22,9 @@ public class NotiController extends Controller {
         this.news = news;
     }
 
+    /** Non-blocking Source Profile UI */
     public CompletionStage<Result> sourceProfile(String name) {
         return news.sourceProfileByName(name)
-                .thenApply(info -> ok(views.html.source.render(info)));
+                .thenApply((SourceInfo info) -> ok(source.render(info)));
     }
 }
