@@ -1,6 +1,42 @@
 package models;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
-public record Article(
-        String title, String url, String sourceName, String sourceUrl,
-        String author, String description, ZonedDateTime publishedAtEt
-) {}
+import java.time.format.DateTimeFormatter;
+
+public class Article {
+    public String title;
+    public String url;
+    public String sourceName;
+    public String sourceUrl;
+    public String publishedDate;
+    public  String description;
+    public double readabilityScore;
+
+    public static String convertToEDT(LocalDateTime time) {
+        ZonedDateTime edt = time.atZone(ZoneId.of("UTC"))
+                .withZoneSameInstant(ZoneId.of("America/Toronto"));
+        return edt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z"));
+    }
+
+    public Article(String title, String url, String sourceName, String sourceUrl, String publishedDate, String description, double readabilityScore) {
+        this.title = title;
+        this.url = url;
+        this.sourceName = sourceName;
+        this.sourceUrl = sourceUrl;
+        this.publishedDate = publishedDate;
+        this.description = description;
+        this.readabilityScore = readabilityScore;
+    }
+
+    public String getTitle() { return title; }
+    public String getUrl() { return url; }
+    public String getSourceName() { return sourceName; }
+    public String getSourceUrl() { return sourceUrl; }
+    public String getPublishedAt() { return publishedDate; }
+    public double getReadabilityScore() { return readabilityScore; }
+    public String getDescription() { return description; }
+
+    public void setReadabilityScore(double readabilityScore) { this.readabilityScore = readabilityScore; }
+}

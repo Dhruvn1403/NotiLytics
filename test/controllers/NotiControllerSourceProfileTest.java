@@ -26,9 +26,10 @@ public class NotiControllerSourceProfileTest {
                 "https://example.com/a1",
                 "ABC News",
                 "https://example.com",
-                "Author",
+                Article.convertToEDT(ZonedDateTime.now().toLocalDateTime()),
                 "Desc",
-                ZonedDateTime.now());
+                (double)0
+                );
         var info = new SourceInfo("abc-news", "ABC News",
                 "Demo profile", "https://abcnews.go.com",
                 "general", "en", "us", List.of(art));

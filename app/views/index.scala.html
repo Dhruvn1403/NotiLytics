@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @(articles: List[controllers.HomeController.Article],
   query: String,
   emoticon: String)
@@ -74,5 +75,67 @@
       }
     </div>
   }
+=======
+@(articles: List[models.Article], searchQuery: String = "")
+
+@main("NotiLytics") {
+<div style="max-width: full; margin: 20px auto; padding: 20px; font-family: sans-serif; background-color: #f9f9f9; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+    <header style="border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px;">
+        <h1 style="color: #333; margin: 0;">NotiLytics</h1>
+    </header>
+
+    <form action="/search" method="get" style="display: flex; gap: 10px; margin-bottom: 30px;">
+        <input
+                type="text"
+                name="query"
+                placeholder="Search keyword..."
+                required
+                style="flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px;"
+                value="@searchQuery"
+        />
+        <button
+                type="submit"
+                style="padding: 10px 15px; background-color: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;"
+        >
+            Search
+        </button>
+    </form>
+
+    @if(articles.isEmpty) {
+    <div style="text-align: center; padding: 40px; background-color: #fff; border-radius: 8px;">
+        <p style="color: #666;">Try searching for something!</p>
+    </div>
+    } else {
+    <div style="display: grid; gap: 20px;">
+        @for(article <- articles) {
+        <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <h3 style="margin-top: 0; margin-bottom: 10px;">
+                <a href="@article.getUrl()" target="_blank" style="text-decoration: none; color: #0056b3;">
+                    @article.getTitle()
+                </a>
+            </h3>
+
+            <p style="color: #555; margin-bottom: 15px; line-height: 1.4;">
+                @article.getDescription()
+            </p>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; color: #777;">
+                <div style="display: flex; gap: 15px;">
+                                <span>
+                                    Source: <a href="@article.getSourceUrl()" target="_blank" style="color: #007BFF; text-decoration: none;">@article.getSourceName()</a>
+                                </span>
+                    <span>
+                                    Published: @article.getPublishedAt()
+                                </span>
+                </div>
+                <span style="font-weight: bold; color: #28a745;">
+                                Readability: @article.getReadabilityScore()
+                            </span>
+            </div>
+        </div>
+        }
+    </div>
+    }
+>>>>>>> d1ed61c71e71eb4fff1ec0dea7d90bd75d2ce21d
 </div>
 }

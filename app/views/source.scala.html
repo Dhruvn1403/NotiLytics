@@ -2,40 +2,59 @@
 
 @main(info.name()) {
 
-<h1>@info.name()</h1>
+<div style="max-width: full; margin: 20px auto; padding: 20px; font-family: sans-serif; background-color: #ffffff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
 
-@if(info.description() != null && !info.description().isEmpty) {
-<p>@info.description()</p>
-}
+    <header style="border-bottom: 2px solid #007BFF; padding-bottom: 15px; margin-bottom: 20px;">
+        <h1 style="color: #333; margin: 0;">@info.name()</h1>
+    </header>
 
-<p>
-    <b>URL:</b>
-    @if(info.url() != null && !info.url().isEmpty) {
-    <a href='@info.url()' target="_blank">@info.url()</a>
+    @if(info.description() != null && !info.description().isEmpty) {
+    <p style="color: #555; line-height: 1.4; margin-bottom: 20px;">
+        @info.description()
+    </p>
+    }
+
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 30px;">
+        <p style="margin: 0; font-size: 0.9em; color: #444;">
+            <b>URL:</b>
+            @if(info.url() != null && !info.url().isEmpty) {
+            <a href='@info.url()' target="_blank" style="color: #007BFF; text-decoration: none; margin-left: 5px;">
+                @info.url()
+            </a>
+            } else {
+            <span style="color: #999;">n/a</span>
+            }
+            <br/>
+            <span style="display: inline-block; margin-top: 8px;">
+                    <b>Category:</b> @info.category()
+                    &nbsp;|&nbsp; <b>Language:</b> @info.language()
+                    &nbsp;|&nbsp; <b>Country:</b> @info.country()
+                </span>
+        </p>
+    </div>
+
+    <h2 style="color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">Latest 10 articles</h2>
+
+    @if(info.articles() == null || info.articles().isEmpty) {
+    <em style="color: #999; padding: 20px; display: block; background-color: #fff; border-radius: 5px;">No recent articles for this source.</em>
     } else {
-    n/a
-    }
-    <br/>
-    <b>Category:</b> @info.category()
-    &nbsp;|&nbsp; <b>Language:</b> @info.language()
-    &nbsp;|&nbsp; <b>Country:</b> @info.country()
-</p>
-
-<h2>Latest 10 articles</h2>
-
-@if(info.articles() == null || info.articles().isEmpty) {
-<em>No recent articles for this source.</em>
-} else {
-<ol>
-    @for(a <- info.articles()) {
-    <li>
-        <a href='@a.url()' target="_blank">@a.title()</a>
-        @* show ET time if present (Article.publishedAtEt()) *@
-        @defining(a.publishedAtEt()) { ts =>
-        @if(ts != null) { — @ts }
+    <ul style="list-style-type: none; padding: 0;">
+        @for(a <- info.articles()) {
+        <li style="padding: 12px 0; border-bottom: 1px solid #eee;">
+            <a href='@a.getUrl()' target="_blank" style="text-decoration: none; color: #0056b3; font-weight: 500;">
+                @a.getTitle()
+            </a>
+            @* show ET time if present (Article.getPublishedAt()) *@
+            @defining(a.getPublishedAt()) { ts =>
+            @if(ts != null) {
+            <span style="font-size: 0.8em; color: #777; margin-left: 10px;">
+                                    — @ts
+                                </span>
+            }
+            }
+        </li>
         }
-    </li>
+    </ul>
     }
-</ol>
-}
+</div>
 }
