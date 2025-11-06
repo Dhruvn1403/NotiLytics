@@ -24,7 +24,7 @@ public class HomeController extends Controller {
 
     // Home page
     public Result index() {
-        return ok(index.render(Collections.emptyList()));
+        return ok(index.render(Collections.emptyList(), ""));
     }
 
     // Search
@@ -45,7 +45,7 @@ public class HomeController extends Controller {
                 .flatMap(q -> cache.get(q).stream())
                 .toList();
 
-        return ok(index.render(allResults));
+        return ok(views.html.index.render(articles, query));
     }
 
     // Fake API fetch for demonstration
