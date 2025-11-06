@@ -76,12 +76,13 @@ public class HomeController extends Controller {
                 // Parse JSON using Play's Json library
                 JsonNode root = Json.parse(content.toString());
                 JsonNode articlesArray = root.get("articles");
+                System.out.println(articlesArray);
 
                 for (JsonNode a : articlesArray) {
                     String title = a.get("title").asText();
                     String articleUrl = a.get("url").asText();
                     String sourceName = a.get("source").get("name").asText();
-                    String sourceUrl = ""; // NewsAPI doesn't give URL
+                    String sourceUrl = "/source/" + a.get("source").get("name").asText(); // NewsAPI doesn't give URL
                     String publishedAt = convertToEDT(
                             LocalDateTime.parse(a.get("publishedAt").asText().replace("Z",""))
                     );
