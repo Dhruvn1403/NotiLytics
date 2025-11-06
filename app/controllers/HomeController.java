@@ -76,7 +76,6 @@ public class HomeController extends Controller {
                 // Parse JSON using Play's Json library
                 JsonNode root = Json.parse(content.toString());
                 JsonNode articlesArray = root.get("articles");
-                System.out.println(articlesArray);
 
                 for (JsonNode a : articlesArray) {
                     String title = a.get("title").asText();
