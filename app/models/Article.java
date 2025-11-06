@@ -10,7 +10,7 @@ public class Article {
     public String url;
     public String sourceName;
     public String sourceUrl;
-    public String publishedDate;
+    public String publishedAt;
     public  String description;
     public double readabilityScore;
 
@@ -20,12 +20,12 @@ public class Article {
         return edt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z"));
     }
 
-    public Article(String title, String url, String sourceName, String sourceUrl, String publishedDate, String description, double readabilityScore) {
+    public Article(String title, String url, String sourceName, String sourceUrl, String publishedAt, String description, double readabilityScore) {
         this.title = title;
         this.url = url;
         this.sourceName = sourceName;
         this.sourceUrl = sourceUrl;
-        this.publishedDate = publishedDate;
+        this.publishedAt = publishedAt;
         this.description = description;
         this.readabilityScore = readabilityScore;
     }
@@ -34,7 +34,7 @@ public class Article {
     public String getUrl() { return url; }
     public String getSourceName() { return sourceName; }
     public String getSourceUrl() { return sourceUrl; }
-    public String getPublishedAt() { return publishedDate; }
+    public String getPublishedAt() { return publishedAt; }
     public double getReadabilityScore() { return readabilityScore; }
     public String getDescription() { return description; }
 

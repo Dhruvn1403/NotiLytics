@@ -1,64 +1,59 @@
-<<<<<<< HEAD
-@(articles: List[controllers.HomeController.Article],
-  query: String,
-  emoticon: String)
+@(articles: List[models.Article], query: String = "", emoticon: String = ":-|")
 
 @main("NotiLytics") {
+
 <style>
   :root{
     --primary:#2563eb;--happy:#10b981;--sad:#ef4444;--neutral:#6b7280;
     --bg:#f9fafb;--card:#ffffff;--radius:.75rem;--shadow:0 4px 12px rgba(0,0,0,.08)
   }
   body{background:var(--bg);font-family:system-ui,Arial,sans-serif;margin:0;color:#1f2937}
-  .nl-wrap{max-width:840px;margin:2rem auto;padding:0 1rem}
+  .nl-wrap{max-width:900px;margin:2rem auto;padding:0 1rem}
   .nl-header{text-align:center;margin-bottom:2rem}
   .nl-header h1{font-size:2rem;margin:.25rem 0}
   .nl-header p{color:#6b7280}
 
-  /* ---------- search bar ---------- */
+  /* search bar */
   .nl-search{display:flex;gap:.5rem;margin-bottom:1.5rem}
   .nl-search input{flex:1;padding:.75rem 1rem;font-size:1rem;border:2px solid #e5e7eb;border-radius:var(--radius);transition:border .2s}
   .nl-search input:focus{outline:none;border-color:var(--primary)}
   .nl-search button{padding:.75rem 1.5rem;font-size:1rem;background:var(--primary);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;transition:background .2s}
   .nl-search button:hover{background:#1e40af}
 
-  /* ---------- sentiment banner ---------- */
+  /* sentiment banner */
   .nl-sent{display:flex;align-items:center;gap:.5rem;margin-bottom:1.5rem;font-size:1.25rem}
   .nl-sent .emo{font-size:2rem}
-  .nl-sent.happy   .emo{color:var(--happy)}
-  .nl-sent.sad     .emo{color:var(--sad)}
+  .nl-sent.happy .emo{color:var(--happy)}
+  .nl-sent.sad .emo{color:var(--sad)}
   .nl-sent.neutral .emo{color:var(--neutral)}
 
-  /* ---------- article grid ---------- */
+  /* articles */
   .nl-grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
   .nl-card{background:var(--card);border:1px solid #e5e7eb;border-radius:var(--radius);padding:1.25rem;transition:box-shadow .2s}
   .nl-card:hover{box-shadow:var(--shadow)}
   .nl-card a.title{font-weight:600;color:#111827;text-decoration:none;font-size:1.05rem;display:block;margin-bottom:.5rem}
   .nl-card a.title:hover{text-decoration:underline}
-  .nl-card .meta{font-size:.85rem;color:#6b7280}
-  .nl-card .meta a{color:#6b7280;text-decoration:none}
-  .nl-card .meta a:hover{text-decoration:underline}
+  .nl-card .meta{font-size:.85rem;color:#6b7280;margin-bottom:.25rem}
+  .nl-card .readability{font-size:.85rem;font-weight:600;color:var(--happy)}
 </style>
 
 <div class="nl-wrap">
   <header class="nl-header">
     <h1>NotiLytics</h1>
-    <p>Real-time news search with sentiment</p>
+    <p>Real-time news search with sentiment & readability analytics</p>
   </header>
 
   <form class="nl-search" action="/search" method="get">
-    <input type="text" name="query" placeholder="Search keyword …" required />
+    <input type="text" name="query" placeholder="Search keyword …" value="@query" required />
     <button type="submit">Search</button>
   </form>
 
   @if(articles.nonEmpty) {
-    @{ /* colour-coded sentiment row */ }
-	<div class="nl-sent @{ emoticon match {
-	      case ":-)"  => "happy"
-	      case ":-("  => "sad"
-	      case _      => "neutral"
-	   }
-	}">
+    <div class="nl-sent @{ emoticon match {
+      case ":-)"  => "happy"
+      case ":-("  => "sad"
+      case _      => "neutral"
+    }}">
       <span>Search terms: <b>@query</b></span>
       <span class="emo">@emoticon</span>
     </div>
@@ -68,74 +63,21 @@
         <article class="nl-card">
           <a class="title" href="@a.getUrl()" target="_blank" rel="noopener">@a.getTitle()</a>
           <div class="meta">
-            Source: <a href="@a.getSourceUrl()" target="_blank" rel="noopener">@a.getSourceName()</a>
-            · Published: @a.getPublishedAt()
+            Source: <a href="@a.getSourceUrl()" target="_blank">@a.getSourceName()</a>
+            · @a.getPublishedAt()
           </div>
+          <div class="meta">@a.getDescription()</div>
+          <div class="readability">Readability: @a.getReadabilityScore()</div>
         </article>
       }
     </div>
   }
-=======
-@(articles: List[models.Article], searchQuery: String = "")
-
-@main("NotiLytics") {
-<div style="max-width: full; margin: 20px auto; padding: 20px; font-family: sans-serif; background-color: #f9f9f9; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-    <header style="border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px;">
-        <h1 style="color: #333; margin: 0;">NotiLytics</h1>
-    </header>
-
-    <form action="/search" method="get" style="display: flex; gap: 10px; margin-bottom: 30px;">
-        <input
-                type="text"
-                name="query"
-                placeholder="Search keyword..."
-                required
-                style="flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px;"
-                value="@searchQuery"
-        />
-        <button
-                type="submit"
-                style="padding: 10px 15px; background-color: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;"
-        >
-            Search
-        </button>
-    </form>
-
-    @if(articles.isEmpty) {
-    <div style="text-align: center; padding: 40px; background-color: #fff; border-radius: 8px;">
-        <p style="color: #666;">Try searching for something!</p>
-    </div>
-    } else {
-    <div style="display: grid; gap: 20px;">
-        @for(article <- articles) {
-        <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            <h3 style="margin-top: 0; margin-bottom: 10px;">
-                <a href="@article.getUrl()" target="_blank" style="text-decoration: none; color: #0056b3;">
-                    @article.getTitle()
-                </a>
-            </h3>
-
-            <p style="color: #555; margin-bottom: 15px; line-height: 1.4;">
-                @article.getDescription()
-            </p>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; color: #777;">
-                <div style="display: flex; gap: 15px;">
-                                <span>
-                                    Source: <a href="@article.getSourceUrl()" target="_blank" style="color: #007BFF; text-decoration: none;">@article.getSourceName()</a>
-                                </span>
-                    <span>
-                                    Published: @article.getPublishedAt()
-                                </span>
-                </div>
-                <span style="font-weight: bold; color: #28a745;">
-                                Readability: @article.getReadabilityScore()
-                            </span>
-            </div>
-        </div>
-        }
-    </div>
-    }
->>>>>>> d1ed61c71e71eb4fff1ec0dea7d90bd75d2ce21d
+  
+  @if(articles.isEmpty && query.nonEmpty) {
+    <p style="text-align:center;margin-top:2rem;color:#6b7280">
+      No articles found for <b>@query</b>. Try another phrase.
+    </p>
+  }
 </div>
+
 }

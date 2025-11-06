@@ -3,13 +3,10 @@ package controllers;
 import play.mvc.*;
 import utils.ReadabilityUtil;
 import views.html.*;
-<<<<<<< HEAD
 import services.SentimentService;
 import javax.inject.Inject;
 
-=======
 import models.Article;
->>>>>>> d1ed61c71e71eb4fff1ec0dea7d90bd75d2ce21d
 import play.libs.Json;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
@@ -36,7 +33,6 @@ public class HomeController extends Controller {
 //        return ok(index.render(Collections.<Article>emptyList()));
 //    }
     public Result index() {
-<<<<<<< HEAD
         return ok(index.render(Collections.<Article>emptyList(), "", ""));
     }
 
@@ -60,38 +56,13 @@ public class HomeController extends Controller {
 //
 //        return ok(index.render(allResults));
 //    }
-=======
-        return ok(index.render(Collections.emptyList(), ""));
-    }
-
-    // Search
-    public Result search(String query) {
-        if (query == null || query.isEmpty()) {
-            return badRequest("Query cannot be empty");
-        }
-
-        // Use cache or fetch new results
-        List<Article> articles = cache.computeIfAbsent(query, this::fetchArticlesForQuery);
-
-        // Track recent queries
-        recentQueries.addFirst(query);
-        if (recentQueries.size() > 10) recentQueries.removeLast();
-
-        // Merge all results from recent queries
-        List<Article> allResults = recentQueries.stream()
-                .flatMap(q -> cache.get(q).stream())
-                .toList();
-
-        return ok(views.html.index.render(articles, query));
-    }
->>>>>>> d1ed61c71e71eb4fff1ec0dea7d90bd75d2ce21d
 
     // Fake API fetch for demonstration
     private List<Article> fetchArticlesForQuery(String query) {
         List<Article> results = new ArrayList<>();
 
         try {
-            String apiKey = System.getenv("NEWSAPI_KEY"); // Replace with your key
+            String apiKey = "19654b43e65f403792cb0109b529b4fe"; // Replace with your key
             String urlStr = "https://newsapi.org/v2/everything?q="
                     + java.net.URLEncoder.encode(query, "UTF-8")
                     + "&pageSize=50&sortBy=publishedAt&apiKey=" + apiKey;
@@ -138,7 +109,6 @@ public class HomeController extends Controller {
 
         return results;
     }
-<<<<<<< HEAD
 
 
     private String convertToEDT(LocalDateTime time) {
@@ -148,28 +118,28 @@ public class HomeController extends Controller {
     }
 
     // Article class
-    public static class Article {
-        public String title;
-        public String url;
-        public String sourceName;
-        public String sourceUrl;
-        public String publishedDate;
-
-        public Article(String title, String url, String sourceName, String sourceUrl, String publishedDate) {
-            this.title = title;
-            this.url = url;
-            this.sourceName = sourceName;
-            this.sourceUrl = sourceUrl;
-            this.publishedDate = publishedDate;
-        }
-
-        public String getTitle() { return title; }
-        public String getUrl() { return url; }
-        public String getSourceName() { return sourceName; }
-        public String getSourceUrl() { return sourceUrl; }
-        public String getPublishedAt() { return publishedDate; }
-    }
-    
+//    public static class Article {
+//        public String title;
+//        public String url;
+//        public String sourceName;
+//        public String sourceUrl;
+//        public String publishedDate;
+//
+//        public Article(String title, String url, String sourceName, String sourceUrl, String publishedDate) {
+//            this.title = title;
+//            this.url = url;
+//            this.sourceName = sourceName;
+//            this.sourceUrl = sourceUrl;
+//            this.publishedDate = publishedDate;
+//        }
+//
+//        public String getTitle() { return title; }
+//        public String getUrl() { return url; }
+//        public String getSourceName() { return sourceName; }
+//        public String getSourceUrl() { return sourceUrl; }
+//        public String getPublishedAt() { return publishedDate; }
+//    }
+//    
     /**
      * @author Jaiminkumar Mayani
      */
@@ -182,20 +152,16 @@ public class HomeController extends Controller {
                     ok(views.html.index.render(List.of(), "", ""))
             );
         }
-        /* 1. fetch articles (re-use your existing helper) */
         List<Article> articles = fetchArticlesForQuery(query);
 
-        /* 2. compute sentiment asynchronously */
         return sentimentService.sentimentForQuery(query)
-                .thenApply(emoticon ->
-                        ok(views.html.index.render(articles, query, emoticon))
-                );
+                .thenApply(emoticon -> {
+                    return ok(views.html.index.render(articles, query, emoticon));
+                });
     }
     
     public CompletionStage<Result> sentiment(String query) {
         return sentimentService.sentimentForQuery(query)
                .thenApply(emo -> ok(Json.toJson(Map.of("sentiment", emo))));
     }
-=======
->>>>>>> d1ed61c71e71eb4fff1ec0dea7d90bd75d2ce21d
 }
