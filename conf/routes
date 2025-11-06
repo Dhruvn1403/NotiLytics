@@ -2,3 +2,4 @@ GET     /               controllers.HomeController.index
 GET     /search         controllers.HomeController.search(query: String ?= "")
 # --- Source profile page
 GET   /source/:name      controllers.NotiController.sourceProfile(name: String)
+GET  /sentiment      controllers.HomeController.sentiment(query: String)

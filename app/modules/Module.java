@@ -3,6 +3,8 @@ package modules;
 import com.google.inject.AbstractModule;
 import services.NewsApiClient;
 import services.NewsApiClientImpl;
+import services.SentimentService;
+import services.SentimentServiceImpl;
 
 public class Module extends AbstractModule {
     @Override
@@ -16,5 +18,10 @@ public class Module extends AbstractModule {
         // } else {
         //   bind(NewsApiClient.class).to(NewsApiClientImpl.class).asEagerSingleton();
         // }
+        
+        /**
+         * @author Jaiminkumar Mayani
+         */
+        bind(SentimentService.class).to(SentimentServiceImpl.class).asEagerSingleton();
     }
 }

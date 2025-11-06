@@ -2,6 +2,8 @@ package controllers;
 
 import play.mvc.*;
 import views.html.*;
+import services.SentimentService;
+import javax.inject.Inject;
 
 import play.libs.Json;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,6 +15,9 @@ import java.util.stream.Collectors;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
 public class HomeController extends Controller {
 
     // Cache: query -> list of articles
@@ -22,30 +27,33 @@ public class HomeController extends Controller {
     private static final Deque<String> recentQueries = new LinkedList<>();
 
     // Home page
+//    public Result index() {
+//        return ok(index.render(Collections.<Article>emptyList()));
+//    }
     public Result index() {
-        return ok(index.render(Collections.<Article>emptyList()));
+        return ok(index.render(Collections.<Article>emptyList(), "", ""));
     }
 
     // Search
-    public Result search(String query) {
-        if (query == null || query.isEmpty()) {
-            return badRequest("Query cannot be empty");
-        }
-
-        // Use cache or fetch new results
-        List<Article> articles = cache.computeIfAbsent(query, this::fetchArticlesForQuery);
-
-        // Track recent queries
-        recentQueries.addFirst(query);
-        if (recentQueries.size() > 10) recentQueries.removeLast();
-
-        // Merge all results from recent queries
-        List<Article> allResults = recentQueries.stream()
-                .flatMap(q -> cache.get(q).stream())
-                .collect(Collectors.toList());
-
-        return ok(index.render(allResults));
-    }
+//    public Result search(String query) {
+//        if (query == null || query.isEmpty()) {
+//            return badRequest("Query cannot be empty");
+//        }
+//
+//        // Use cache or fetch new results
+//        List<Article> articles = cache.computeIfAbsent(query, this::fetchArticlesForQuery);
+//
+//        // Track recent queries
+//        recentQueries.addFirst(query);
+//        if (recentQueries.size() > 10) recentQueries.removeLast();
+//
+//        // Merge all results from recent queries
+//        List<Article> allResults = recentQueries.stream()
+//                .flatMap(q -> cache.get(q).stream())
+//                .collect(Collectors.toList());
+//
+//        return ok(index.render(allResults));
+//    }
 
     // Fake API fetch for demonstration
     private List<Article> fetchArticlesForQuery(String query) {
@@ -55,7 +63,7 @@ public class HomeController extends Controller {
             String apiKey = "1ede3e954c314c06a3ffb21d639c7c6d"; // Replace with your key
             String urlStr = "https://newsapi.org/v2/everything?q="
                     + java.net.URLEncoder.encode(query, "UTF-8")
-                    + "&pageSize=10&sortBy=publishedAt&apiKey=" + apiKey;
+                    + "&pageSize=50&sortBy=publishedAt&apiKey=" + apiKey;
 
             java.net.URL url = new java.net.URL(urlStr);
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
@@ -125,5 +133,32 @@ public class HomeController extends Controller {
         public String getSourceName() { return sourceName; }
         public String getSourceUrl() { return sourceUrl; }
         public String getPublishedAt() { return publishedDate; }
+    }
+    
+    /**
+     * @author Jaiminkumar Mayani
+     */
+    
+    @Inject private SentimentService sentimentService;   // field injection is fine for Play
+
+    public CompletionStage<Result> search(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(
+                    ok(views.html.index.render(List.of(), "", ""))
+            );
+        }
+        /* 1. fetch articles (re-use your existing helper) */
+        List<Article> articles = fetchArticlesForQuery(query);
+
+        /* 2. compute sentiment asynchronously */
+        return sentimentService.sentimentForQuery(query)
+                .thenApply(emoticon ->
+                        ok(views.html.index.render(articles, query, emoticon))
+                );
+    }
+    
+    public CompletionStage<Result> sentiment(String query) {
+        return sentimentService.sentimentForQuery(query)
+               .thenApply(emo -> ok(Json.toJson(Map.of("sentiment", emo))));
     }
 }
