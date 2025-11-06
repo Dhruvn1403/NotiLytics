@@ -29,9 +29,9 @@
 <ol>
     @for(a <- info.articles()) {
     <li>
-        <a href='@a.url()' target="_blank">@a.title()</a>
-        @* show ET time if present (Article.publishedAtEt()) *@
-        @defining(a.publishedAtEt()) { ts =>
+        <a href='@a.getUrl()' target="_blank">@a.getTitle()</a>
+        @* show ET time if present (Article.getPublishedAt()) *@
+        @defining(a.getPublishedAt()) { ts =>
         @if(ts != null) { — @ts }
         }
     </li>

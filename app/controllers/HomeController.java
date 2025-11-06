@@ -1,6 +1,7 @@
 package controllers;
 
 import play.mvc.*;
+import utils.ReadabilityUtil;
 import views.html.*;
 
 import play.libs.Json;
@@ -76,7 +77,6 @@ public class HomeController extends Controller {
                 // Parse JSON using Play's Json library
                 JsonNode root = Json.parse(content.toString());
                 JsonNode articlesArray = root.get("articles");
-                System.out.println(articlesArray);
 
                 for (JsonNode a : articlesArray) {
                     String title = a.get("title").asText();
@@ -86,8 +86,11 @@ public class HomeController extends Controller {
                     String publishedAt = convertToEDT(
                             LocalDateTime.parse(a.get("publishedAt").asText().replace("Z",""))
                     );
+                    String description = a.hasNonNull("description") ? a.get("description").asText() : "No description available";
+                    double readability = ReadabilityUtil.calculateReadability(description);
 
-                    results.add(new Article(title, articleUrl, sourceName, sourceUrl, publishedAt));
+                    results.add(new Article(title, articleUrl, sourceName, sourceUrl, publishedAt, description, readability));
+
                 }
             }
 
@@ -112,13 +115,17 @@ public class HomeController extends Controller {
         public String sourceName;
         public String sourceUrl;
         public String publishedDate;
+        public  String description;
+        public double readabilityScore;
 
-        public Article(String title, String url, String sourceName, String sourceUrl, String publishedDate) {
+        public Article(String title, String url, String sourceName, String sourceUrl, String publishedDate, String description, double readabilityScore) {
             this.title = title;
             this.url = url;
             this.sourceName = sourceName;
             this.sourceUrl = sourceUrl;
             this.publishedDate = publishedDate;
+            this.description = description;
+            this.readabilityScore = readabilityScore;
         }
 
         public String getTitle() { return title; }
@@ -126,5 +133,9 @@ public class HomeController extends Controller {
         public String getSourceName() { return sourceName; }
         public String getSourceUrl() { return sourceUrl; }
         public String getPublishedAt() { return publishedDate; }
+        public double getReadabilityScore() { return readabilityScore; }
+        public String getDescription() { return description; }
+
+        public void setReadabilityScore(double readabilityScore) { this.readabilityScore = readabilityScore; }
     }
 }

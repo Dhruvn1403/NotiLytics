@@ -1,5 +1,5 @@
 package models;
-
+import controllers.HomeController.Article;
 import java.util.List;
 
 /**

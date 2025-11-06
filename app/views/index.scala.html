@@ -12,9 +12,11 @@
     @if(!articles.isEmpty) {
     <ul>
         @for(article <- articles) {
-        <li>
+        <li style="border-bottom: 1px solid black; padding-top: 10px; padding-bottom: 10px;">
             <a href="@article.getUrl()" target="_blank">@article.getTitle()</a><br>
             Source: <a href="@article.getSourceUrl()" target="_blank">@article.getSourceName()</a><br>
+            <p>@article.getDescription()</p>
+            <p><strong>Readability:</strong> @article.getReadabilityScore()</p>
             Published: @article.getPublishedAt()<br>
         </li>
         }
