@@ -8,15 +8,13 @@ import play.libs.ws.WSResponse;
 
 import javax.inject.Inject;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
-import controllers.HomeController.Article;
 import models.SourceInfo;
+import models.Article;
 import utils.ReadabilityUtil;
 
 public final class NewsApiClientImpl implements NewsApiClient {
@@ -36,12 +34,6 @@ public final class NewsApiClientImpl implements NewsApiClient {
                 : (config.hasPath("newsapi.key") ? config.getString("newsapi.key") : null);
 
         System.out.println("NEWSAPI_KEY present? " + (this.apiKey != null && !this.apiKey.isBlank()));
-    }
-
-    private String convertToEDT(LocalDateTime time) {
-        ZonedDateTime edt = time.atZone(ZoneId.of("UTC"))
-                .withZoneSameInstant(ZoneId.of("America/Toronto"));
-        return edt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z"));
     }
 
     /** Attach API key via header and query param. */
@@ -122,9 +114,9 @@ public final class NewsApiClientImpl implements NewsApiClient {
                             String author = a.path("author").asText("");
                             String description = a.path("description").asText("");
 
-                            String publishedAtEt = convertToEDT(
+                            String publishedAtEt = Article.convertToEDT(
                                     LocalDateTime.parse(a.get("publishedAt").asText().replace("Z",""))
-                            );;
+                            );
                             String published = a.path("publishedAt").asText(null);
                             if (published != null && !published.isBlank()) {
                                 try { publishedAtEt = String.valueOf(ZonedDateTime.parse(published)); }

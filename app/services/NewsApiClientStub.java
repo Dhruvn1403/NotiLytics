@@ -1,9 +1,8 @@
 package services;
 
-import controllers.HomeController.Article;
+import models.Article;
 import models.SourceInfo;
 
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -18,7 +17,7 @@ public class NewsApiClientStub implements NewsApiClient {
                 "https://example.com",
                 "ZonedDateTime.now()",
                 "Demo description",
-                (double)0
+                0
         );
         var info = new SourceInfo(
                 "demo-id", sourceName, "Demo profile for " + sourceName,

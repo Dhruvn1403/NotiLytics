@@ -3,7 +3,7 @@ package controllers;
 import play.mvc.*;
 import utils.ReadabilityUtil;
 import views.html.*;
-
+import models.Article;
 import play.libs.Json;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
@@ -24,7 +24,7 @@ public class HomeController extends Controller {
 
     // Home page
     public Result index() {
-        return ok(index.render(Collections.<Article>emptyList()));
+        return ok(index.render(Collections.emptyList()));
     }
 
     // Search
@@ -43,7 +43,7 @@ public class HomeController extends Controller {
         // Merge all results from recent queries
         List<Article> allResults = recentQueries.stream()
                 .flatMap(q -> cache.get(q).stream())
-                .collect(Collectors.toList());
+                .toList();
 
         return ok(index.render(allResults));
     }
@@ -53,7 +53,7 @@ public class HomeController extends Controller {
         List<Article> results = new ArrayList<>();
 
         try {
-            String apiKey = "1ede3e954c314c06a3ffb21d639c7c6d"; // Replace with your key
+            String apiKey = System.getenv("NEWSAPI_KEY"); // Replace with your key
             String urlStr = "https://newsapi.org/v2/everything?q="
                     + java.net.URLEncoder.encode(query, "UTF-8")
                     + "&pageSize=10&sortBy=publishedAt&apiKey=" + apiKey;
@@ -83,7 +83,7 @@ public class HomeController extends Controller {
                     String articleUrl = a.get("url").asText();
                     String sourceName = a.get("source").get("name").asText();
                     String sourceUrl = "/source/" + a.get("source").get("name").asText(); // NewsAPI doesn't give URL
-                    String publishedAt = convertToEDT(
+                    String publishedAt = Article.convertToEDT(
                             LocalDateTime.parse(a.get("publishedAt").asText().replace("Z",""))
                     );
                     String description = a.hasNonNull("description") ? a.get("description").asText() : "No description available";
@@ -99,43 +99,5 @@ public class HomeController extends Controller {
         }
 
         return results;
-    }
-
-
-    private String convertToEDT(LocalDateTime time) {
-        ZonedDateTime edt = time.atZone(ZoneId.of("UTC"))
-                .withZoneSameInstant(ZoneId.of("America/Toronto"));
-        return edt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z"));
-    }
-
-    // Article class
-    public static class Article {
-        public String title;
-        public String url;
-        public String sourceName;
-        public String sourceUrl;
-        public String publishedDate;
-        public  String description;
-        public double readabilityScore;
-
-        public Article(String title, String url, String sourceName, String sourceUrl, String publishedDate, String description, double readabilityScore) {
-            this.title = title;
-            this.url = url;
-            this.sourceName = sourceName;
-            this.sourceUrl = sourceUrl;
-            this.publishedDate = publishedDate;
-            this.description = description;
-            this.readabilityScore = readabilityScore;
-        }
-
-        public String getTitle() { return title; }
-        public String getUrl() { return url; }
-        public String getSourceName() { return sourceName; }
-        public String getSourceUrl() { return sourceUrl; }
-        public String getPublishedAt() { return publishedDate; }
-        public double getReadabilityScore() { return readabilityScore; }
-        public String getDescription() { return description; }
-
-        public void setReadabilityScore(double readabilityScore) { this.readabilityScore = readabilityScore; }
     }
 }
