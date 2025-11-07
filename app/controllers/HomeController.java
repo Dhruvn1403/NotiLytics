@@ -1,5 +1,7 @@
 package controllers;
 
+import services.NewsApiClient;
+import java.util.function.Function;
 import play.mvc.*;
 import scala.Tuple2;
 import utils.ReadabilityUtil;
@@ -29,6 +31,9 @@ public class HomeController extends Controller {
 
     @Inject
     private SentimentService sentimentService;
+
+    @Inject
+    private NewsApiClient newsApiClient;  
 
     //    @author Dhruv Patel
     public Result index() {
@@ -184,4 +189,39 @@ public class HomeController extends Controller {
         return sentimentService.sentimentForQuery(query)
                 .thenApply(emo -> ok(Json.toJson(Map.of("sentiment", emo))));
     }
+
+    //    @author Varun Oza
+    public CompletionStage<Result> wordStats(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(badRequest("Query cannot be empty."));
+        }
+
+        System.out.println(">>> [WordStats] Generating stats for query: " + query);
+
+        return newsApiClient.searchArticles(query, 50).thenApply(articles -> {
+            // Extract all words from article descriptions
+            Map<String, Long> wordCounts = articles.stream()
+                    .map(a -> a.getDescription() == null ? "" : a.getDescription())
+                    .map(desc -> desc.replaceAll("[^a-zA-Z ]", "").toLowerCase())
+                    .flatMap(desc -> Arrays.stream(desc.split("\\s+")))
+                    .filter(w -> w.length() > 3) // ignore short/common words
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+            // Sort descending by frequency
+            Map<String, Long> sorted = wordCounts.entrySet().stream()
+                    .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                    .limit(50)
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            Map.Entry::getValue,
+                            (a, b) -> a,
+                            LinkedHashMap::new
+                    ));
+
+            System.out.println(">>> [WordStats] Computed " + sorted.size() + " words for query: " + query);
+            return ok(views.html.wordStats.render(query, sorted));
+        });
+    }    
+
+
 }

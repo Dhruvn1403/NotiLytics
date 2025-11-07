@@ -74,6 +74,12 @@
     @defining(data._2) { avgReadability =>
     <div class="keyword-title">
         Keyword: @keyword (Avg. Readability: @("%.2f".format(avgReadability)))
+        &nbsp; | &nbsp;
+        <a href="/wordstats/@keyword"
+            target="_blank"
+            style="font-size:0.95rem;color:#2563eb;text-decoration:none;">
+            View Word Stats
+        </a>
     </div>
     <div class="nl-grid">
         @for(a <- articles.asScala) {

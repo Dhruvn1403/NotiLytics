@@ -1,42 +1,47 @@
+<!-- @author Varun Oza -->
 @*
   Twirl view for Word Stats
   Params:
     - query: the search phrase
-    - wordCounts: java.util.List[WordCount]
+    - wordCounts: java.util.Map[String, Long]
 *@
-@import models.WordStatsService.WordCount
-@import scala.jdk.javaapi.CollectionConverters
+@import scala.jdk.CollectionConverters._
 
-@(query: String, wordCounts: java.util.List[WordCount])(implicit request: play.mvc.Http.Request)
+@(query: String, wordCounts: java.util.Map[String, Long])
 
-@()
-@main("Word Stats") {  @* If you have a @main layout; otherwise see the minimal HTML version below *@
+@main("Word Stats - NotiLytics") {
 
-    <section style="max-width:900px;margin:2rem auto;padding:1rem;">
-        <h1 style="margin:0 0 1rem 0;">Word statistics for: <code>@query</code></h1>
+<section style="max-width:900px;margin:2rem auto;padding:1rem;font-family:system-ui,Arial,sans-serif;color:#1f2937;">
+    <h1 style="margin:0 0 1rem 0;font-size:1.75rem;">Word statistics for: <code>@query</code></h1>
 
-        @if(wordCounts == null || wordCounts.isEmpty) {
-            <p>No words found for this query (no article descriptions available).</p>
-        } else {
-            <div style="overflow-x:auto;">
-                <table style="width:100%;border-collapse:collapse;">
-                    <thead>
-                        <tr>
-                            <th style="text-align:left;border-bottom:1px solid #ddd;padding:8px;">Word</th>
-                            <th style="text-align:right;border-bottom:1px solid #ddd;padding:8px;">Frequency</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @for(wc <- CollectionConverters.asScala(wordCounts)) {
-                        <tr>
-                            <td style="border-bottom:1px solid #f0f0f0;padding:8px;">@wc.getWord()</td>
-                            <td style="border-bottom:1px solid #f0f0f0;padding:8px;text-align:right;">@wc.getCount()</td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
-        }
-    </section>
+    @if(wordCounts == null || wordCounts.isEmpty) {
+        <p>No words found for this query (no article descriptions available).</p>
+    } else {
+        <div style="overflow-x:auto;background:#fff;border-radius:.75rem;box-shadow:0 4px 12px rgba(0,0,0,.08);">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead style="background:#f3f4f6;">
+                    <tr>
+                        <th style="text-align:left;border-bottom:1px solid #ddd;padding:10px 12px;">#</th>
+                        <th style="text-align:left;border-bottom:1px solid #ddd;padding:10px 12px;">Word</th>
+                        <th style="text-align:right;border-bottom:1px solid #ddd;padding:10px 12px;">Frequency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @for(((word, count), idx) <- wordCounts.asScala.zipWithIndex) {
+                    <tr>
+                        <td style="border-bottom:1px solid #f0f0f0;padding:8px 12px;color:#6b7280;">@{idx + 1}</td>
+                        <td style="border-bottom:1px solid #f0f0f0;padding:8px 12px;">@word</td>
+                        <td style="border-bottom:1px solid #f0f0f0;padding:8px 12px;text-align:right;">@count</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div style="margin-top:1.5rem;">
+        <a href="/" style="text-decoration:none;background:#2563eb;color:#fff;padding:.75rem 1.5rem;border-radius:.75rem;transition:background .2s;">← Back to Home</a>
+    </div>
+</section>
 
 }
