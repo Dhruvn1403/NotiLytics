@@ -38,9 +38,10 @@ public final class SentimentServiceImpl implements SentimentService {
     @Inject
     public SentimentServiceImpl(WSClient ws, com.typesafe.config.Config config) {
         this.ws = ws;
-        this.apiKey = Optional.ofNullable(System.getenv("NEWSAPI_KEY"))
-                              .filter(k -> !k.isBlank())
-                              .orElse(config.getString("newsapi.key"));
+//        this.apiKey = Optional.ofNullable(System.getenv("NEWSAPI_KEY"))
+//                              .filter(k -> !k.isBlank())
+//                              .orElse(config.getString("newsapi.key"));
+        this.apiKey = "cf69ac0f4dd54ce4a2a5e00503ecaf77";
     }
 
     @Override

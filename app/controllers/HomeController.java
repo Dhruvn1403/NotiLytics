@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-//    @author Dhruv Patel, Jaimim Mayani, Monil Tailor
+//    @author Dhruv Patel, Jaimin Mayani, Monil Tailor
 public class HomeController extends Controller {
 
     private static final Map<String, List<Article>> cache = new ConcurrentHashMap<>();
@@ -48,7 +48,7 @@ public class HomeController extends Controller {
                 .stream()
                 .limit(10)
                 .collect(Collectors.toList());
-
+//        System.out.println(articles);
         // Calc Average Readability
         double avgReadability = articles.stream()
                 .mapToDouble(Article::getReadabilityScore)
@@ -80,7 +80,7 @@ public class HomeController extends Controller {
         // Your existing fetchArticlesForQuery code remains unchanged
         List<Article> results = new ArrayList<>();
         try {
-            String apiKey = "197e644898e24b5384081402fdaafcd3";
+            String apiKey = "cf69ac0f4dd54ce4a2a5e00503ecaf77";
             String urlStr = "https://newsapi.org/v2/everything?q="
                     + URLEncoder.encode(query, StandardCharsets.UTF_8)
                     + "&pageSize=50&sortBy=publishedAt&apiKey=" + apiKey;
