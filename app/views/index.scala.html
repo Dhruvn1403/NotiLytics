@@ -1,4 +1,4 @@
-@(accumulatedResults: LinkedHashMap[String, List[models.Article]], emoticon: String = ":-|")
+@(accumulatedResults: java.util.Map[String, scala.Tuple2[java.util.List[models.Article], java.lang.Double]], emoticon: String)
 
 @main("NotiLytics") {
 
@@ -50,39 +50,53 @@
         <button type="submit">Search</button>
     </form>
 
-    @if(accumulatedResults.nonEmpty) {
-    <div class="nl-sent @{ emoticon match {
-      case ":-)"  => "happy"
-    case ":-("  => "sad"
-    case _      => "neutral"
-    }}">
-    <span>Search terms: <b>@accumulatedResults.keys.mkString(", ")</b></span>
-    <span class="emo">@emoticon</span>
-</div>
+    <a href="/sources">
+        <button style="padding:.75rem 1.5rem;background:#2563eb;color:#fff;border:none;border-radius:.75rem;cursor:pointer">
+            View News Sources
+        </button>
+    </a>
 
-@for((keyword, articles) <- accumulatedResults.toSeq.reverse) {
-<div class="keyword-title">Keyword: @keyword</div>
-<div class="nl-grid">
-    @for(a <- articles) {
-    <article class="nl-card">
-        <a class="title" href="@a.getUrl()" target="_blank" rel="noopener">@a.getTitle()</a>
-        <div class="meta">
-            Source: <a href="@a.getSourceUrl()" target="_blank">@a.getSourceName()</a>
-            · @a.getPublishedAt()
-        </div>
-        <div class="meta">@a.getDescription()</div>
-        <div class="readability">Readability: @a.getReadabilityScore()</div>
-    </article>
+    @defining(
+    emoticon match {
+    case ":-)" => "happy"
+    case ":-(" => "sad"
+    case _     => "neutral"
     }
-</div>
-}
-}
+    ) { sentimentClass =>
+    <div class="nl-sent @sentimentClass">
+        <span>Search terms: <b>@accumulatedResults.keySet.mkString(", ")</b></span>
+        <span class="emo">@emoticon</span>
+    </div>
+    }
 
-@if(accumulatedResults.isEmpty) {
-<p style="text-align:center;margin-top:2rem;color:#6b7280">
-    No articles yet. Try searching a keyword.
-</p>
-}
+    @for((keyword, data) <- scala.jdk.CollectionConverters.MapHasAsScala(accumulatedResults).asScala.toSeq.reverse) {
+    @defining(data._1) { articles =>
+    @defining(data._2) { avgReadability =>
+    <div class="keyword-title">
+        Keyword: @keyword (Avg. Readability: @("%.2f".format(avgReadability)))
+    </div>
+    <div class="nl-grid">
+        @for(a <- articles.asScala) {
+        <article class="nl-card">
+            <a class="title" href="@a.getUrl()" target="_blank" rel="noopener">@a.getTitle()</a>
+            <div class="meta">
+                Source: <a href="@a.getSourceUrl()" target="_blank">@a.getSourceName()</a>
+                · @a.getPublishedAt()
+            </div>
+            <div class="meta">@a.getDescription()</div>
+            <div class="readability">Readability: @a.getReadabilityScore()</div>
+        </article>
+        }
+    </div>
+    }
+    }
+    }
+
+    @if(accumulatedResults.isEmpty) {
+    <p style="text-align:center;margin-top:2rem;color:#6b7280">
+        No articles yet. Try searching a keyword.
+    </p>
+    }
 </div>
 
 }

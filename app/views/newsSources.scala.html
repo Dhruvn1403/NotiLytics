@@ -1,0 +1,74 @@
+@(sources: List[Map[String,String]])
+
+@main("News Sources") {
+
+<style>
+    body{font-family:system-ui,Arial,sans-serif;margin:0;color:#1f2937;background:#f9fafb;}
+    .wrap{max-width:900px;margin:2rem auto;padding:0 1rem}
+    h1{margin-bottom:1rem;color:#111827}
+    .filter{margin-bottom:1.5rem;display:flex;gap:.5rem}
+    .filter select, .filter button{padding:.5rem; border-radius:.5rem; border:1px solid #e5e7eb}
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th, td{padding:.75rem;text-align:left;border-bottom:1px solid #e5e7eb}
+    th{background:#f3f4f6}
+</style>
+
+<div class="wrap">
+    <h1>News Sources</h1>
+
+    <form class="filter" method="get" action="/sources">
+        <select name="country">
+            <option value="">All Countries</option>
+            <option value="us">US</option>
+            <option value="ca">Canada</option>
+            <option value="gb">UK</option>
+            <option value="au">Australia</option>
+        </select>
+
+        <select name="category">
+            <option value="">All Categories</option>
+            <option value="business">Business</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="general">General</option>
+            <option value="health">Health</option>
+            <option value="science">Science</option>
+            <option value="sports">Sports</option>
+            <option value="technology">Technology</option>
+        </select>
+
+        <select name="language">
+            <option value="">All Languages</option>
+            <option value="en">English</option>
+            <option value="fr">French</option>
+            <option value="es">Spanish</option>
+        </select>
+
+        <button type="submit">Filter</button>
+    </form>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Language</th>
+            <th>Country</th>
+            <th>URL</th>
+        </tr>
+        </thead>
+        <tbody>
+        @for(source <- sources) {
+        <tr>
+            <td>@source("name")</td>
+            <td>@source("description")</td>
+            <td>@source("category")</td>
+            <td>@source("language")</td>
+            <td>@source("country")</td>
+            <td><a href="@source("url")" target="_blank">Link</a></td>
+        </tr>
+        }
+        </tbody>
+    </table>
+</div>
+}

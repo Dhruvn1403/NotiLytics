@@ -1,14 +1,12 @@
 package controllers;
 
 import models.WordStatsService;
-import models.WordStatsService.WordCount;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Http;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 /**
