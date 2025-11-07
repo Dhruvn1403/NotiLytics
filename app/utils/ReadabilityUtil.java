@@ -1,8 +1,10 @@
 package utils;
 
+//    @author Dhruv Patel
 public class ReadabilityUtil {
 
     // Calculate Flesch–Kincaid Grade Level for given text
+    //    @author Dhruv Patel
     public static double calculateReadability(String text) {
         if (text == null || text.isEmpty()) {
             return 0.0;
@@ -21,6 +23,7 @@ public class ReadabilityUtil {
         return Math.round(fleschKincaid * 100.0) / 100.0; // round to 2 decimals
     }
 
+    //    @author Dhruv Patel
     private static int countSyllables(String text) {
         text = text.toLowerCase();
         int count = 0;

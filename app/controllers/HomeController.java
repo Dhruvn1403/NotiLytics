@@ -5,162 +5,125 @@ import utils.ReadabilityUtil;
 import views.html.*;
 import services.SentimentService;
 import javax.inject.Inject;
-
 import models.Article;
 import play.libs.Json;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.time.*;
+import java.net.URLEncoder;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
+//    @author Dhruv Patel, Jaimim Mayani
 public class HomeController extends Controller {
 
-    // Cache: query -> list of articles
     private static final Map<String, List<Article>> cache = new ConcurrentHashMap<>();
-
-    // Keep track of last 10 queries globally (simple version)
     private static final Deque<String> recentQueries = new LinkedList<>();
 
-    // Home page
-//    public Result index() {
-//        return ok(index.render(Collections.<Article>emptyList()));
-//    }
+    // Accumulated results for stacked display: keyword -> top 10 articles
+    private static final LinkedHashMap<String, List<Article>> accumulatedResults = new LinkedHashMap<>();
+    private static final int MAX_KEYWORDS = 10;
+
+    @Inject
+    private SentimentService sentimentService;
+
+    //    @author Dhruv Patel
     public Result index() {
-        return ok(index.render(Collections.<Article>emptyList(), "", ""));
+        return ok(index.render(new LinkedHashMap<String, List<Article>>(), ":-|"));
     }
 
-    // Search
-//    public Result search(String query) {
-//        if (query == null || query.isEmpty()) {
-//            return badRequest("Query cannot be empty");
-//        }
-//
-//        // Use cache or fetch new results
-//        List<Article> articles = cache.computeIfAbsent(query, this::fetchArticlesForQuery);
-//
-//        // Track recent queries
-//        recentQueries.addFirst(query);
-//        if (recentQueries.size() > 10) recentQueries.removeLast();
-//
-//        // Merge all results from recent queries
-//        List<Article> allResults = recentQueries.stream()
-//                .flatMap(q -> cache.get(q).stream())
-//                .collect(Collectors.toList());
-//
-//        return ok(index.render(allResults));
-//    }
+    //    @author Dhruv Patel
+    public CompletionStage<Result> search(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(
+                    ok(index.render(new LinkedHashMap<String, List<Article>>(), ":-|"))
+            );
+        }
 
-    // Fake API fetch for demonstration
+        // Fetch top 10 articles for this query (use cache if available)
+        List<Article> articles = cache.computeIfAbsent(query, this::fetchArticlesForQuery)
+                .stream()
+                .limit(10)
+                .collect(Collectors.toList());
+
+        // Add to accumulatedResults (newest keyword on top)
+        accumulatedResults.put(query, articles);
+
+        // Remove oldest keyword if more than MAX_KEYWORDS
+        if (accumulatedResults.size() > MAX_KEYWORDS) {
+            String oldestKey = accumulatedResults.keySet().iterator().next();
+            accumulatedResults.remove(oldestKey);
+        }
+
+        // Convert to LinkedHashMap before passing to the view
+        LinkedHashMap<String, List<Article>> linkedResults = new LinkedHashMap<>(accumulatedResults);
+
+        // Fetch sentiment for this query
+        return sentimentService.sentimentForQuery(query)
+                .thenApply(emoticon -> ok(index.render(linkedResults, emoticon)));
+    }
+
+    //    @author Dhruv Patel
     private List<Article> fetchArticlesForQuery(String query) {
+        // Your existing fetchArticlesForQuery code remains unchanged
         List<Article> results = new ArrayList<>();
-
         try {
-            String apiKey = "197e644898e24b5384081402fdaafcd3"; // Replace with key
+            String apiKey = "197e644898e24b5384081402fdaafcd3";
             String urlStr = "https://newsapi.org/v2/everything?q="
-                    + java.net.URLEncoder.encode(query, "UTF-8")
+                    + URLEncoder.encode(query, "UTF-8")
                     + "&pageSize=50&sortBy=publishedAt&apiKey=" + apiKey;
 
             java.net.URL url = new java.net.URL(urlStr);
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
 
-            int responseCode = conn.getResponseCode();
-            if (responseCode == 200) {
+            if (conn.getResponseCode() == 200) {
                 java.io.BufferedReader in = new java.io.BufferedReader(
                         new java.io.InputStreamReader(conn.getInputStream())
                 );
                 StringBuilder content = new StringBuilder();
                 String line;
-                while ((line = in.readLine()) != null) {
-                    content.append(line);
-                }
+                while ((line = in.readLine()) != null) content.append(line);
                 in.close();
 
-                // Parse JSON using Play's Json library
                 JsonNode root = Json.parse(content.toString());
                 JsonNode articlesArray = root.get("articles");
 
-                for (JsonNode a : articlesArray) {
-                    String title = a.get("title").asText();
-                    String articleUrl = a.get("url").asText();
-                    String sourceName = a.get("source").get("name").asText();
-                    String sourceUrl = "/source/" + a.get("source").get("name").asText(); // NewsAPI doesn't give URL
-                    String publishedAt = Article.convertToEDT(
-                            LocalDateTime.parse(a.get("publishedAt").asText().replace("Z",""))
-                    );
-                    String description = a.hasNonNull("description") ? a.get("description").asText() : "No description available";
+                int limit = Math.min(10, articlesArray.size());
+                for (int i = 0; i < limit; i++) {
+                    JsonNode a = articlesArray.get(i);
+                    String title = a.path("title").asText("");
+                    String articleUrl = a.path("url").asText("");
+                    String sourceName = a.path("source").path("name").asText("");
+                    String sourceUrl = "/source/" + sourceName.replaceAll("\\s+", "_");
+                    String publishedAtUtc = a.path("publishedAt").asText("");
+                    String publishedAt = publishedAtUtc;
+                    try {
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+                        LocalDateTime utcTime = LocalDateTime.parse(publishedAtUtc.replace("Z", ""), formatter);
+                        publishedAt = Article.convertToEDT(utcTime);
+                    } catch (Exception e) {
+                        publishedAt = publishedAtUtc;
+                    }
+                    String description = a.hasNonNull("description")
+                            ? a.get("description").asText()
+                            : "No description available";
+
                     double readability = ReadabilityUtil.calculateReadability(description);
-
-                    results.add(new Article(title, articleUrl, sourceName, sourceUrl, publishedAt, description, readability));
-
+                    results.add(new Article(title, articleUrl, sourceName, sourceUrl,
+                            publishedAt, description, readability));
                 }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return results;
     }
 
-
-    private String convertToEDT(LocalDateTime time) {
-        ZonedDateTime edt = time.atZone(ZoneId.of("UTC"))
-                .withZoneSameInstant(ZoneId.of("America/Toronto"));
-        return edt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z"));
-    }
-
-    // Article class
-//    public static class Article {
-//        public String title;
-//        public String url;
-//        public String sourceName;
-//        public String sourceUrl;
-//        public String publishedDate;
-//
-//        public Article(String title, String url, String sourceName, String sourceUrl, String publishedDate) {
-//            this.title = title;
-//            this.url = url;
-//            this.sourceName = sourceName;
-//            this.sourceUrl = sourceUrl;
-//            this.publishedDate = publishedDate;
-//        }
-//
-//        public String getTitle() { return title; }
-//        public String getUrl() { return url; }
-//        public String getSourceName() { return sourceName; }
-//        public String getSourceUrl() { return sourceUrl; }
-//        public String getPublishedAt() { return publishedDate; }
-//    }
-//    
-    /**
-     * @author Jaiminkumar Mayani
-     */
-    
-    @Inject private SentimentService sentimentService;   // field injection is fine for Play
-
-    public CompletionStage<Result> search(String query) {
-        if (query == null || query.trim().isEmpty()) {
-            return CompletableFuture.completedFuture(
-                    ok(views.html.index.render(List.of(), "", ""))
-            );
-        }
-        List<Article> articles = fetchArticlesForQuery(query);
-        return sentimentService.sentimentForQuery(query)
-                .thenApply(emoticon -> {
-                    return ok(views.html.index.render(articles, query, emoticon));
-                });
-    }
-    
+    //    @author Jaimin Mayani
     public CompletionStage<Result> sentiment(String query) {
         return sentimentService.sentimentForQuery(query)
-               .thenApply(emo -> ok(Json.toJson(Map.of("sentiment", emo))));
+                .thenApply(emo -> ok(Json.toJson(Map.of("sentiment", emo))));
     }
 }
