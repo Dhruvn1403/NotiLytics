@@ -62,7 +62,7 @@ public class HomeController extends Controller {
         List<Article> results = new ArrayList<>();
 
         try {
-            String apiKey = "19654b43e65f403792cb0109b529b4fe"; // Replace with your key
+            String apiKey = "197e644898e24b5384081402fdaafcd3"; // Replace with key
             String urlStr = "https://newsapi.org/v2/everything?q="
                     + java.net.URLEncoder.encode(query, "UTF-8")
                     + "&pageSize=50&sortBy=publishedAt&apiKey=" + apiKey;
@@ -153,7 +153,6 @@ public class HomeController extends Controller {
             );
         }
         List<Article> articles = fetchArticlesForQuery(query);
-
         return sentimentService.sentimentForQuery(query)
                 .thenApply(emoticon -> {
                     return ok(views.html.index.render(articles, query, emoticon));
