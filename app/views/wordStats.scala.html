@@ -1,0 +1,42 @@
+@*
+  Twirl view for Word Stats
+  Params:
+    - query: the search phrase
+    - wordCounts: java.util.List[WordCount]
+*@
+@import models.WordStatsService.WordCount
+@import scala.jdk.javaapi.CollectionConverters
+
+@(query: String, wordCounts: java.util.List[WordCount])(implicit request: play.mvc.Http.Request)
+
+@()
+@main("Word Stats") {  @* If you have a @main layout; otherwise see the minimal HTML version below *@
+
+    <section style="max-width:900px;margin:2rem auto;padding:1rem;">
+        <h1 style="margin:0 0 1rem 0;">Word statistics for: <code>@query</code></h1>
+
+        @if(wordCounts == null || wordCounts.isEmpty) {
+            <p>No words found for this query (no article descriptions available).</p>
+        } else {
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;border-bottom:1px solid #ddd;padding:8px;">Word</th>
+                            <th style="text-align:right;border-bottom:1px solid #ddd;padding:8px;">Frequency</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @for(wc <- CollectionConverters.asScala(wordCounts)) {
+                        <tr>
+                            <td style="border-bottom:1px solid #f0f0f0;padding:8px;">@wc.getWord()</td>
+                            <td style="border-bottom:1px solid #f0f0f0;padding:8px;text-align:right;">@wc.getCount()</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+}
