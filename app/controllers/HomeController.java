@@ -140,7 +140,7 @@ public class HomeController extends Controller {
     //    @author Monil Tailor
     public Result newsSources(String country, String category, String language) {
         try {
-            String apiKey = "197e644898e24b5384081402fdaafcd3";
+            String apiKey = "cf69ac0f4dd54ce4a2a5e00503ecaf77";
             StringBuilder urlStr = new StringBuilder("https://newsapi.org/v2/sources?apiKey=" + apiKey);
 
             if (country != null && !country.isEmpty()) urlStr.append("&country=").append(country);
@@ -184,6 +184,7 @@ public class HomeController extends Controller {
         }
     }
 
+
     //    @author Jaimin Mayani
     public CompletionStage<Result> sentiment(String query) {
         return sentimentService.sentimentForQuery(query)
@@ -222,6 +223,5 @@ public class HomeController extends Controller {
             return ok(views.html.wordStats.render(query, sorted));
         });
     }    
-
 
 }
