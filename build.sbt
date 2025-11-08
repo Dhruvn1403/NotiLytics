@@ -19,3 +19,21 @@ libraryDependencies ++= Seq(
 Test / fork := true
 Test / testOptions += Tests.Argument(TestFrameworks.JUnit)
 
+// ---- TEST DEPENDENCIES ----
+libraryDependencies ++= Seq(
+  "junit" % "junit" % "4.13.2" % Test,
+  "org.mockito" % "mockito-core" % "5.12.0" % Test,
+  "org.mockito" % "mockito-inline" % "5.2.0" % Test // allows mocking some finals
+)
+
+// ---- JACOCO & TEST SETTINGS ----
+Test / parallelExecution := false
+
+// Exclude Play auto-generated stuff from coverage (allowed by spec)
+jacocoExcludes := Seq(
+  "router.*",
+  "Routes*",
+  "controllers.routes*",
+  "controllers.Reverse*",
+  "views.html.*"
+)

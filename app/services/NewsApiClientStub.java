@@ -1,3 +1,7 @@
+/**
+ * NewsAPI client implementation for sources & profiles.
+ * @author Manush Shah
+ */
 package services;
 
 import models.Article;

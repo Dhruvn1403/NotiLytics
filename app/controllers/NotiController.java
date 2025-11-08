@@ -10,7 +10,8 @@ import javax.inject.Inject;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Controller for NotiLytics - Source Profile page.
+ * Controller for source profiles and source browsing.
+ * Shows profile info of a source website and its last 10 articles.
  * @author Manush Shah
  */
 public class NotiController extends Controller {

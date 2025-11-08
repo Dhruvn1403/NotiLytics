@@ -1,3 +1,8 @@
+/**
+ * Represents metadata of a news source and recent articles (for profile view).
+ * @author Manush Shah
+ */
+
 package models;
 import java.util.List;
 

@@ -16,11 +16,10 @@ import models.Article;
 import models.SourceInfo;
 
 /**
- * Implementation of NewsApiClient for live data fetches from NewsAPI.org.
- * Converts publish time to Eastern Time (EST/EDT) and computes readability.
- *
- * @author Varun Oza
+ * NewsAPI client implementation for sources & profiles.
+ * @author Manush Shah
  */
+
 public final class NewsApiClientImpl implements NewsApiClient {
 
     private final WSClient ws;
