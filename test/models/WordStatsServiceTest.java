@@ -4,7 +4,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import services.NewsApiClient;
 /**
- * @author Manush Shah
+ * @author Java Developers
  */
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

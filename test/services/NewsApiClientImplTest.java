@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * author Varun Oza  
+ * author: Java Developers
  */
 public class NewsApiClientImplTest {
 

@@ -1,6 +1,6 @@
 /**
  * Tests for source profile + linking from search results.
- * @author Manush Shah
+ * @author Java Developers
  */
 package controllers;
 

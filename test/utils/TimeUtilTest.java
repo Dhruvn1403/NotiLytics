@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *  - Correct timezone conversion
  *  - Handling of Z (UTC) suffix
  *  - Invalid format exception case
- * Author: Varun Oza
+ * Author: Java Developers
  */
 public class TimeUtilTest {
 

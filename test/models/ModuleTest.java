@@ -9,7 +9,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 /**
- * @author Varun Oza
+ * @author Java Developers
  */
 
 public class ModuleTest {

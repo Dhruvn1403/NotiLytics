@@ -18,7 +18,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * Author: Varun Oza
+ * Author: Java Developers
  */
 public class SentimentServiceImplTest {
 
