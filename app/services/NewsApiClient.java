@@ -1,3 +1,8 @@
+/**
+ * Fetch detailed profile of a source and its recent articles.
+ * @return profile with last 10 articles
+ * @author Manush Shah
+ */
 package services;
 
 import models.SourceInfo;
