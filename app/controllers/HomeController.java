@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-//    @author Dhruv Patel, Jaimin Mayani, Monil Tailor
+//    @author Dhruv Patel, Jaiminkumar Mayani, Monil Tailor
 public class HomeController extends Controller {
 
     private static final Map<String, List<Article>> cache = new ConcurrentHashMap<>();
