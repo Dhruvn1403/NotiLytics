@@ -3,6 +3,8 @@ package modules;
 import com.google.inject.AbstractModule;
 import services.NewsApiClient;
 import services.NewsApiClientImpl;
+import services.NewsSources;
+import services.NewsSourcesImpl;
 import services.SentimentService;
 import services.SentimentServiceImpl;
 
@@ -23,5 +25,10 @@ public class Module extends AbstractModule {
          * @author Jaiminkumar Mayani
          */
         bind(SentimentService.class).to(SentimentServiceImpl.class).asEagerSingleton();
+
+        /**
+         * @author Monil Tailor
+         */
+        bind(NewsSources.class).to(NewsSourcesImpl.class).asEagerSingleton();
     }
 }

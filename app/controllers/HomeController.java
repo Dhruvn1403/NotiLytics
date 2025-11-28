@@ -1,23 +1,36 @@
 package controllers;
 
+import play.mvc.Controller;
+import play.mvc.Result;
+
 import services.NewsApiClient;
-import java.util.function.Function;
-import play.mvc.*;
-import scala.Tuple2;
-import utils.ReadabilityUtil;
-import views.html.*;
+import services.NewsSources;
 import services.SentimentService;
-import javax.inject.Inject;
+
+import utils.ReadabilityUtil;
+
 import models.Article;
+
 import play.libs.Json;
+
 import com.fasterxml.jackson.databind.JsonNode;
+
+import scala.Tuple2;
+
+import javax.inject.Inject;
+
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import views.html.*;
+
 
 //    @author Dhruv Patel, Jaiminkumar Mayani, Monil Tailor
 public class HomeController extends Controller {
@@ -138,51 +151,17 @@ public class HomeController extends Controller {
     }
 
     //    @author Monil Tailor
-    public Result newsSources(String country, String category, String language) {
-        try {
-            String apiKey = "cf69ac0f4dd54ce4a2a5e00503ecaf77";
-            StringBuilder urlStr = new StringBuilder("https://newsapi.org/v2/sources?apiKey=" + apiKey);
+    @Inject
+    private NewsSources NewsSources;
 
-            if (country != null && !country.isEmpty()) urlStr.append("&country=").append(country);
-            if (category != null && !category.isEmpty()) urlStr.append("&category=").append(category);
-            if (language != null && !language.isEmpty()) urlStr.append("&language=").append(language);
-
-            java.net.URL url = new java.net.URL(urlStr.toString());
-            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-
-            List<Map<String, String>> sourcesList = new ArrayList<>();
-            if (conn.getResponseCode() == 200) {
-                java.io.BufferedReader in = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(conn.getInputStream())
-                );
-                StringBuilder content = new StringBuilder();
-                String line;
-                while ((line = in.readLine()) != null) content.append(line);
-                in.close();
-
-                JsonNode root = Json.parse(content.toString());
-                JsonNode sources = root.get("sources");
-
-                for (JsonNode s : sources) {
-                    Map<String, String> sourceInfo = new HashMap<>();
-                    sourceInfo.put("id", s.path("id").asText());
-                    sourceInfo.put("name", s.path("name").asText());
-                    sourceInfo.put("description", s.path("description").asText(""));
-                    sourceInfo.put("url", s.path("url").asText(""));
-                    sourceInfo.put("category", s.path("category").asText(""));
-                    sourceInfo.put("language", s.path("language").asText(""));
-                    sourceInfo.put("country", s.path("country").asText(""));
-                    sourcesList.add(sourceInfo);
-                }
-            }
-
-            return ok(views.html.newsSources.render(sourcesList));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return internalServerError("Failed to fetch news sources");
-        }
+    // ---------------------
+    // News Sources (Monil)
+    // ---------------------
+    public CompletionStage<Result> newsSources(String country, String category, String language) {
+        return NewsSources.fetchSources(country, category, language)
+                .thenApply(sourcesList -> ok(views.html.newsSources.render(sourcesList)));
     }
+
 
 
     //    @author Jaimin Mayani
