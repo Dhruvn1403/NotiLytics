@@ -1,7 +1,6 @@
 GET     /               controllers.HomeController.index
-GET     /search         controllers.HomeController.search(query: String ?= "")
 # --- Source profile page
-GET   /source/:name      controllers.HomeController.sourceProfile(name: String)
+GET   /search     controllers.HomeController.search(query: String ?= "", sort: String ?= "")
 GET  /sentiment      controllers.HomeController.sentiment(query: String)
 GET     /wordstats/:query      controllers.HomeController.wordStats(query: String)
 GET     /sources                  controllers.HomeController.newsSources(country: String ?= "", category: String ?= "", language: String ?= "")
