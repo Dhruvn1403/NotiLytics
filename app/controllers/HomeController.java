@@ -76,7 +76,7 @@ public class HomeController extends Controller {
     }
 
     //    @author Dhruv Patel
-    public CompletionStage<Result> search(String query) {
+    public CompletionStage<Result> search(String query, String sort) {
         if (query == null || query.trim().isEmpty()) {
             return CompletableFuture.completedFuture(
                     ok(index.render(new LinkedHashMap<>(), ":-|"))
@@ -84,10 +84,12 @@ public class HomeController extends Controller {
         }
 
         // Fetch top 10 articles for this query (use cache if available)
-        List<Article> articles = cache.computeIfAbsent(query, this::fetchArticlesForQuery)
+        List<Article> articles = cache.computeIfAbsent(query + "_" + sort,
+                        key -> fetchArticlesForQuery(query, sort))
                 .stream()
                 .limit(10)
                 .collect(Collectors.toList());
+
 //        System.out.println(articles);
         // Calc Average Readability
         double avgReadability = articles.stream()
@@ -116,14 +118,16 @@ public class HomeController extends Controller {
     }
 
     //    @author Dhruv Patel
-    private List<Article> fetchArticlesForQuery(String query) {
+    private List<Article> fetchArticlesForQuery(String query, String sort) {
         // Your existing fetchArticlesForQuery code remains unchanged
         List<Article> results = new ArrayList<>();
         try {
             String apiKey = "cf69ac0f4dd54ce4a2a5e00503ecaf77";
             String urlStr = "https://newsapi.org/v2/everything?q="
                     + URLEncoder.encode(query, StandardCharsets.UTF_8)
-                    + "&pageSize=50&sortBy=publishedAt&apiKey=" + apiKey;
+                    + "&pageSize=50&sortBy=" + sort
+                    + "&apiKey=" + apiKey;
+
 
             java.net.URL url = new java.net.URL(urlStr);
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();

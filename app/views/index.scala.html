@@ -50,9 +50,17 @@ Main search results view. Source name is hyperlinked to the profile page.
     </header>
 
     <form class="nl-search" action="/search" method="get">
-        <input type="text" name="query" placeholder="Search keyword …" value="" required />
+        <input type="text" name="query" placeholder="Search keyword …" required />
+
+        <div style="margin:8px 0;">
+            <label><input type="radio" name="sort" value="relevancy"> Relevancy</label>
+            <label><input type="radio" name="sort" value="popularity"> Popularity</label>
+            <label><input type="radio" name="sort" value="publishedAt"> Publish Date</label>
+        </div>
+
         <button type="submit">Search</button>
     </form>
+
 
     <a href="/sources">
         <button style="padding:.75rem 1.5rem;background:#2563eb;color:#fff;border:none;border-radius:.75rem;cursor:pointer">
