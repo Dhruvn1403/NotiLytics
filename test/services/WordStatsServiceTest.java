@@ -1,7 +1,9 @@
-package models;
+package services;
 
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import models.Article;
 import services.NewsApiClient;
 /**
  * @author Java Developers

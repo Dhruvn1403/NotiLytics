@@ -1,9 +1,10 @@
-package models;
-
-import services.NewsApiClient;
+package services;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import models.Article;
+
 import java.text.Normalizer;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
