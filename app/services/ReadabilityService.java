@@ -1,7 +1,7 @@
-package utils;
+package services;
 
 //    @author Dhruv Patel
-public class ReadabilityUtil {
+public class ReadabilityService {
 
     // Calculate Flesch–Kincaid Grade Level for given text
     //    @author Dhruv Patel

@@ -1,5 +1,6 @@
 package controllers;
 
+import models.SourceInfo;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.WebSocket;
@@ -8,7 +9,7 @@ import services.NewsApiClient;
 import services.NewsSources;
 import services.SentimentService;
 
-import utils.ReadabilityUtil;
+import services.ReadabilityService;
 
 import models.Article;
 
@@ -34,7 +35,6 @@ import java.util.stream.Collectors;
 import views.html.*;
 
 import actors.UserSessionActor;
-import org.apache.pekko.actor.typed.ActorRef;
 import org.apache.pekko.actor.ActorSystem;
 import org.apache.pekko.stream.Materializer;
 import org.apache.pekko.actor.typed.javadsl.Adapter;
@@ -161,7 +161,7 @@ public class HomeController extends Controller {
                             ? a.get("description").asText()
                             : "No description available";
 
-                    double readability = ReadabilityUtil.calculateReadability(description);
+                    double readability = ReadabilityService.calculateReadability(description);
                     results.add(new Article(title, articleUrl, sourceName, sourceUrl,
                             publishedAt, description, readability));
                 }
@@ -219,8 +219,12 @@ public class HomeController extends Controller {
             System.out.println(">>> [WordStats] Computed " + sorted.size() + " words for query: " + query);
             return ok(views.html.wordStats.render(query, sorted));
         });
-    }    
+    }
 
+    public CompletionStage<Result> sourceProfile(String name) {
+        return newsApiClient.sourceProfileByName(name)
+                .thenApply((SourceInfo info) -> ok(source.render(info)));
+    }
     // ============================================================
     //          WEBSOCKET ENDPOINT (DELIVERY 2 ADDITION) 
     // ============================================================
