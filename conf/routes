@@ -5,5 +5,6 @@ GET   /source/:name      controllers.NotiController.sourceProfile(name: String)
 GET  /sentiment      controllers.HomeController.sentiment(query: String)
 GET     /wordstats/:query      controllers.HomeController.wordStats(query: String)
 GET     /sources                  controllers.HomeController.newsSources(country: String ?= "", category: String ?= "", language: String ?= "")
+GET   /ws     controllers.HomeController.ws
 
 

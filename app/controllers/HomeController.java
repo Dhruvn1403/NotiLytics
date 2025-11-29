@@ -2,6 +2,7 @@ package controllers;
 
 import play.mvc.Controller;
 import play.mvc.Result;
+import play.mvc.WebSocket;
 
 import services.NewsApiClient;
 import services.NewsSources;
@@ -12,6 +13,7 @@ import utils.ReadabilityUtil;
 import models.Article;
 
 import play.libs.Json;
+import play.libs.streams.ActorFlow;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -31,6 +33,12 @@ import java.util.stream.Collectors;
 
 import views.html.*;
 
+import actors.UserSessionActor;
+import org.apache.pekko.actor.typed.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.stream.Materializer;
+import org.apache.pekko.actor.typed.javadsl.Adapter;
+
 
 //    @author Dhruv Patel, Jaiminkumar Mayani, Monil Tailor
 public class HomeController extends Controller {
@@ -47,6 +55,20 @@ public class HomeController extends Controller {
 
     @Inject
     private NewsApiClient newsApiClient;  
+
+    //    @author Monil Tailor
+    @Inject
+    private NewsSources NewsSources;
+
+    // 🔥 ActorSystem injected (required for WebSockets)
+    private final ActorSystem classicActorSystem;
+    private final Materializer materializer;
+
+    @Inject
+    public HomeController(ActorSystem classicActorSystem, Materializer materializer) {
+        this.classicActorSystem = classicActorSystem;
+        this.materializer = materializer;
+    }
 
     //    @author Dhruv Patel
     public Result index() {
@@ -150,10 +172,6 @@ public class HomeController extends Controller {
         return results;
     }
 
-    //    @author Monil Tailor
-    @Inject
-    private NewsSources NewsSources;
-
     // ---------------------
     // News Sources (Monil)
     // ---------------------
@@ -203,4 +221,23 @@ public class HomeController extends Controller {
         });
     }    
 
+    // ============================================================
+    //          WEBSOCKET ENDPOINT (DELIVERY 2 ADDITION) 
+    // ============================================================
+
+    public WebSocket ws() {
+        return WebSocket.Text.accept(request ->
+            ActorFlow.actorRef(
+                out -> Adapter.props(
+                    () -> UserSessionActor.create(
+                            Adapter.toTyped(out),
+                            newsApiClient,
+                            NewsSources
+                    )
+                ),
+                classicActorSystem,
+                materializer
+            )
+        );
+    }
 }
