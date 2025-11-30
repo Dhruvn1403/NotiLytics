@@ -2,45 +2,162 @@
 Main search results view. Source name is hyperlinked to the profile page.
 @author Manush Shah
 *@
-@(accumulatedResults: java.util.Map[String, scala.Tuple2[java.util.List[models.Article], java.lang.Double]], emoticon: String)
+@(accumulatedResults: java.util.Map[String, scala.Tuple2[java.util.List[models.Article], java.lang.Double]], emoticon:
+String)
 
 @main("NotiLytics") {
 
 <style>
-    :root{
-      --primary:#2563eb;--happy:#10b981;--sad:#ef4444;--neutral:#6b7280;
-      --bg:#f9fafb;--card:#ffffff;--radius:.75rem;--shadow:0 4px 12px rgba(0,0,0,.08)
+    :root {
+        --primary: #2563eb;
+        --happy: #10b981;
+        --sad: #ef4444;
+        --neutral: #6b7280;
+        --bg: #f9fafb;
+        --card: #ffffff;
+        --radius: .75rem;
+        --shadow: 0 4px 12px rgba(0, 0, 0, .08)
     }
-    body{background:var(--bg);font-family:system-ui,Arial,sans-serif;margin:0;color:#1f2937}
-    .nl-wrap{max-width:900px;margin:2rem auto;padding:0 1rem}
-    .nl-header{text-align:center;margin-bottom:2rem}
-    .nl-header h1{font-size:2rem;margin:.25rem 0}
-    .nl-header p{color:#6b7280}
+
+    body {
+        background: var(--bg);
+        font-family: system-ui, Arial, sans-serif;
+        margin: 0;
+        color: #1f2937
+    }
+
+    .nl-wrap {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1rem
+    }
+
+    .nl-header {
+        text-align: center;
+        margin-bottom: 2rem
+    }
+
+    .nl-header h1 {
+        font-size: 2rem;
+        margin: .25rem 0
+    }
+
+    .nl-header p {
+        color: #6b7280
+    }
 
     /* search bar */
-    .nl-search{display:flex;gap:.5rem;margin-bottom:1.5rem}
-    .nl-search input{flex:1;padding:.75rem 1rem;font-size:1rem;border:2px solid #e5e7eb;border-radius:var(--radius);transition:border .2s}
-    .nl-search input:focus{outline:none;border-color:var(--primary)}
-    .nl-search button{padding:.75rem 1.5rem;font-size:1rem;background:var(--primary);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;transition:background .2s}
-    .nl-search button:hover{background:#1e40af}
+    .nl-search {
+        display: flex;
+        gap: .5rem;
+        margin-bottom: 1.5rem
+    }
+
+    .nl-search input {
+        flex: 1;
+        padding: .75rem 1rem;
+        font-size: 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: var(--radius);
+        transition: border .2s
+    }
+
+    .nl-search input:focus {
+        outline: none;
+        border-color: var(--primary)
+    }
+
+    .nl-search button {
+        padding: .75rem 1.5rem;
+        font-size: 1rem;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: background .2s
+    }
+
+    .nl-search button:hover {
+        background: #1e40af
+    }
 
     /* sentiment banner */
-    .nl-sent{display:flex;align-items:center;gap:.5rem;margin-bottom:1.5rem;font-size:1.25rem}
-    .nl-sent .emo{font-size:2rem}
-    .nl-sent.happy .emo{color:var(--happy)}
-    .nl-sent.sad .emo{color:var(--sad)}
-    .nl-sent.neutral .emo{color:var(--neutral)}
+    .nl-sent {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.25rem
+    }
+
+    .nl-sent .emo {
+        font-size: 2rem
+    }
+
+    .nl-sent.happy .emo {
+        color: var(--happy)
+    }
+
+    .nl-sent.sad .emo {
+        color: var(--sad)
+    }
+
+    .nl-sent.neutral .emo {
+        color: var(--neutral)
+    }
 
     /* articles */
-    .nl-grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
-    .nl-card{background:var(--card);border:1px solid #e5e7eb;border-radius:var(--radius);padding:1.25rem;transition:box-shadow .2s}
-    .nl-card:hover{box-shadow:var(--shadow)}
-    .nl-card a.title{font-weight:600;color:#111827;text-decoration:none;font-size:1.05rem;display:block;margin-bottom:.5rem}
-    .nl-card a.title:hover{text-decoration:underline}
-    .nl-card .meta{font-size:.85rem;color:#6b7280;margin-bottom:.25rem}
-    .nl-card .readability{font-size:.85rem;font-weight:600;color:var(--happy)}
+    .nl-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr))
+    }
 
-    .keyword-title{margin-top:2rem;margin-bottom:0.5rem;font-size:1.2rem;font-weight:600;color:#111827}
+    .nl-card {
+        background: var(--card);
+        border: 1px solid #e5e7eb;
+        border-radius: var(--radius);
+        padding: 1.25rem;
+        transition: box-shadow .2s
+    }
+
+    .nl-card:hover {
+        box-shadow: var(--shadow)
+    }
+
+    .nl-card a.title {
+        font-weight: 600;
+        color: #111827;
+        text-decoration: none;
+        font-size: 1.05rem;
+        display: block;
+        margin-bottom: .5rem
+    }
+
+    .nl-card a.title:hover {
+        text-decoration: underline
+    }
+
+    .nl-card .meta {
+        font-size: .85rem;
+        color: #6b7280;
+        margin-bottom: .25rem
+    }
+
+    .nl-card .readability {
+        font-size: .85rem;
+        font-weight: 600;
+        color: var(--happy)
+    }
+
+    .keyword-title {
+        margin-top: 2rem;
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #111827
+    }
 </style>
 
 <div class="nl-wrap">
@@ -63,7 +180,8 @@ Main search results view. Source name is hyperlinked to the profile page.
 
 
     <a href="/sources">
-        <button style="padding:.75rem 1.5rem;background:#2563eb;color:#fff;border:none;border-radius:.75rem;cursor:pointer">
+        <button
+            style="padding:.75rem 1.5rem;background:#2563eb;color:#fff;border:none;border-radius:.75rem;cursor:pointer">
             View News Sources
         </button>
     </a>
@@ -72,7 +190,7 @@ Main search results view. Source name is hyperlinked to the profile page.
     emoticon match {
     case ":-)" => "happy"
     case ":-(" => "sad"
-    case _     => "neutral"
+    case _ => "neutral"
     }
     ) { sentimentClass =>
     <div class="nl-sent @sentimentClass">
@@ -82,39 +200,67 @@ Main search results view. Source name is hyperlinked to the profile page.
     }
 
     @for((keyword, data) <- scala.jdk.CollectionConverters.MapHasAsScala(accumulatedResults).asScala.toSeq.reverse) {
-    @defining(data._1) { articles =>
-    @defining(data._2) { avgReadability =>
-    <div class="keyword-title">
-        Keyword: @keyword (Avg. Readability: @("%.2f".format(avgReadability)))
-        &nbsp; | &nbsp;
-        <a href="/wordstats/@keyword"
-            target="_blank"
-            style="font-size:0.95rem;color:#2563eb;text-decoration:none;">
-            View Word Stats
-        </a>
-    </div>
-    <div class="nl-grid">
-        @for(a <- articles.asScala) {
-        <article class="nl-card">
-            <a class="title" href="@a.getUrl()" target="_blank" rel="noopener">@a.getTitle()</a>
-            <div class="meta">
-                Source: <a href="@a.getSourceUrl()" target="_blank">@a.getSourceName()</a>
-                · @a.getPublishedAt()
-            </div>
-            <div class="meta">@a.getDescription()</div>
-            <div class="readability">Readability: @a.getReadabilityScore()</div>
-        </article>
+        @defining(data._1) { articles=>
+        @defining(data._2) { avgReadability =>
+        <div class="keyword-title">
+            Keyword: @keyword (Avg. Readability: @("%.2f".format(avgReadability)))
+            &nbsp; | &nbsp;
+            <a href="/wordstats/@keyword" target="_blank" style="font-size:0.95rem;color:#2563eb;text-decoration:none;">
+                View Word Stats
+            </a>
+        </div>
+        <div class="nl-grid">
+            @for(a <- articles.asScala) { <article class="nl-card">
+                <a class="title" href="@a.getUrl()" target="_blank" rel="noopener">@a.getTitle()</a>
+                <div class="meta">
+                    Source: <a href="@a.getSourceUrl()" target="_blank">@a.getSourceName()</a>
+                    · @a.getPublishedAt()
+                </div>
+                <div class="meta">@a.getDescription()</div>
+                <div class="readability">Readability: @a.getReadabilityScore()</div>
+                </article>
+                }
+        </div>
         }
-    </div>
-    }
-    }
-    }
+        }
+        }
 
-    @if(accumulatedResults.isEmpty) {
-    <p style="text-align:center;margin-top:2rem;color:#6b7280">
-        No articles yet. Try searching a keyword.
-    </p>
-    }
+        @if(accumulatedResults.isEmpty) {
+        <p style="text-align:center;margin-top:2rem;color:#6b7280">
+            No articles yet. Try searching a keyword.
+        </p>
+        }
 </div>
+<script>
+    const ws = new WebSocket("ws://localhost:9000/ws");
+
+    ws.onopen = () => {
+        console.log("WS open");
+        // send a start-search command as plain text JSON. Play's ActorFlow.actorRef will forward it to the actor (classic wrapper).
+        // The controller's ActorFlow expects the client to send the raw query string or JSON depending on your actor wiring.
+        // We'll send JSON: { "cmd": "start", "query": "covid" }
+        ws.send(JSON.stringify({ cmd: "start", query: "covid" }));
+    };
+
+    ws.onmessage = (evt) => {
+        try {
+            const msg = JSON.parse(evt.data);
+            if (msg.type === "article_batch") {
+                // initial batch (array)
+                console.log("initial articles", msg.articles);
+            } else if (msg.type === "new_article") {
+                console.log("new article", msg.article);
+            } else if (msg.type === "wordStats") {
+                console.log("wordStats", msg.counts);
+            } else if (msg.type === "error") {
+                console.warn("server error:", msg.message);
+            } else {
+                console.log("unknown msg", msg);
+            }
+        } catch (e) {
+            console.log("raw message", evt.data);
+        }
+    };
+</script>
 
 }
