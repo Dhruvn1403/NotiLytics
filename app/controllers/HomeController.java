@@ -39,7 +39,8 @@ import org.apache.pekko.actor.typed.javadsl.Adapter;
 
 /**
  * Main controller for the News Dashboard application.
- * Handles search, sentiment analysis, word statistics, source information, and WebSocket endpoints.
+ * Handles search, sentiment analysis, word statistics, source information, and
+ * WebSocket endpoints.
  * <p>
  * Accumulated search results and caching are implemented for efficiency.
  * </p>
@@ -55,6 +56,9 @@ import org.apache.pekko.actor.typed.javadsl.Adapter;
 public class HomeController extends Controller {
 
     private static final Map<String, List<Article>> cache = new ConcurrentHashMap<>();
+    // private static final Deque<String> recentQueries = new LinkedList<>();
+
+    // Accumulated results for stacked display: keyword -> top 10 articles
     private final LinkedHashMap<String, Tuple2<List<Article>, Double>> accumulatedResults = new LinkedHashMap<>();
     private static final int MAX_KEYWORDS = 10;
 
@@ -73,8 +77,7 @@ public class HomeController extends Controller {
             NewsApiClient newsApiClient,
             NewsSources newsSources,
             SentimentService sentimentService,
-            ReadabilityService readabilityService
-    ) {
+            ReadabilityService readabilityService) {
         this.classicActorSystem = classicActorSystem;
         this.materializer = materializer;
         this.newsApiClient = newsApiClient;
@@ -104,20 +107,24 @@ public class HomeController extends Controller {
      */
     public CompletionStage<Result> search(String query, String sort) {
         if (query == null || query.trim().isEmpty()) {
-            return CompletableFuture.completedFuture(ok(index.render(new LinkedHashMap<>(), ":-|")));
+            return CompletableFuture.completedFuture(
+                    ok(index.render(new LinkedHashMap<>(), ":-|")));
         }
 
         List<Article> articles = cache.computeIfAbsent(query + "_" + sort,
-                        key -> fetchArticlesForQuery(query, sort))
+                key -> fetchArticlesForQuery(query, sort))
                 .stream()
                 .limit(10)
                 .collect(Collectors.toList());
 
+        // System.out.println(articles);
+        // Calc Average Readability
         double avgReadability = articles.stream()
                 .mapToDouble(Article::getReadabilityScore)
                 .average()
                 .orElse(0.0);
 
+        // Add to accumulatedResults (newest keyword on top)
         accumulatedResults.put(query, new Tuple2<>(articles, avgReadability));
 
         if (accumulatedResults.size() > MAX_KEYWORDS) {
@@ -125,6 +132,11 @@ public class HomeController extends Controller {
             accumulatedResults.remove(oldestKey);
         }
 
+        // Convert to LinkedHashMap before passing to the view
+        // LinkedHashMap<String, Map.Entry<List<Article>, Double>> linkedResults =
+        // new LinkedHashMap<>(accumulatedResults);
+
+        // Fetch sentiment for this query
         return sentimentService.sentimentForQuery(query)
                 .thenApply(emoticon -> ok(index.render(accumulatedResults, emoticon)));
     }
@@ -152,11 +164,11 @@ public class HomeController extends Controller {
 
             if (conn.getResponseCode() == 200) {
                 java.io.BufferedReader in = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(conn.getInputStream())
-                );
+                        new java.io.InputStreamReader(conn.getInputStream()));
                 StringBuilder content = new StringBuilder();
                 String line;
-                while ((line = in.readLine()) != null) content.append(line);
+                while ((line = in.readLine()) != null)
+                    content.append(line);
                 in.close();
 
                 JsonNode root = Json.parse(content.toString());
@@ -216,7 +228,15 @@ public class HomeController extends Controller {
      */
     public CompletionStage<Result> sentiment(String query) {
         return sentimentService.sentimentForQuery(query)
-                .thenApply(emo -> ok(Json.toJson(Map.of("sentiment", emo))));
+                .handle((result, error) -> {
+                    if (error != null) {
+                        return ok(Json.newObject()
+                                .put("sentiment", ":-|")
+                                .put("error", error.getMessage()));
+                    }
+                    return ok(Json.newObject()
+                            .put("sentiment", result));
+                });
     }
 
     /**
@@ -248,8 +268,7 @@ public class HomeController extends Controller {
                             Map.Entry::getKey,
                             Map.Entry::getValue,
                             (a, b) -> a,
-                            LinkedHashMap::new
-                    ));
+                            LinkedHashMap::new));
 
             System.out.println(">>> [WordStats] Computed " + sorted.size() + " words for query: " + query);
             return ok(views.html.wordStats.render(query, sorted));
@@ -270,26 +289,34 @@ public class HomeController extends Controller {
 
     /**
      * WebSocket endpoint for live session updates.
-     * Integrates UserSessionActor for managing session state and pushing updates to the client.
+     * Integrates UserSessionActor for managing session state and pushing updates to
+     * the client.
      *
      * @return WebSocket accepting text messages
      * @author Group
      */
     public WebSocket ws() {
-        return WebSocket.Text.accept(request ->
-                ActorFlow.actorRef(
-                        out -> Adapter.props(
-                                () -> UserSessionActor.create(
-                                        Adapter.toTyped(out),
-                                        newsApiClient,
-                                        NewsSources,
-                                        sentimentService,
-                                        readabilityService
-                                )
-                        ),
-                        classicActorSystem,
-                        materializer
-                )
-        );
+        return WebSocket.Text.acceptOrResult(request -> {
+            Optional<String> originOpt = request.header("Origin");
+            String origin = originOpt.orElse("");
+
+            if (!origin.equals("http://localhost") && !origin.equals("http://localhost:9000")) {
+                return CompletableFuture.completedFuture(
+                        play.libs.F.Either.Left(forbidden("Invalid origin")));
+            }
+
+            return CompletableFuture.completedFuture(
+                    play.libs.F.Either.Right(
+                            ActorFlow.actorRef(
+                                    out -> Adapter.props(
+                                            () -> UserSessionActor.create(
+                                                    Adapter.toTyped(out),
+                                                    newsApiClient,
+                                                    NewsSources,
+                                                    sentimentService,
+                                                    readabilityService)),
+                                    classicActorSystem,
+                                    materializer)));
+        });
     }
 }

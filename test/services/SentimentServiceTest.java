@@ -8,9 +8,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
 import play.libs.ws.*;
 
+import com.typesafe.config.Config;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-
+import play.libs.Json;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -163,5 +164,33 @@ public class SentimentServiceTest {
 
         String result = svc.sentimentForQuery("mixed").toCompletableFuture().join();
         assertEquals(":-|", result);
+    }
+
+    @Test
+    public void sentimentForQuery_returnsHappy() {
+        WSClient ws = mock(WSClient.class);
+        Config cfg = mock(Config.class);
+        when(cfg.hasPath("newsapi.key")).thenReturn(true);
+        when(cfg.getString("newsapi.key")).thenReturn("fake-key");
+
+        // Mock WS chain
+        WSRequest req = mock(WSRequest.class);
+        WSResponse resp = mock(WSResponse.class);
+        when(ws.url(anyString())).thenReturn(req);
+        when(req.addQueryParameter(any(), any())).thenReturn(req);
+        when(req.get()).thenReturn(CompletableFuture.completedFuture(resp));
+
+        // Mock JSON response
+        ObjectNode root = Json.newObject();
+        ArrayNode arts = root.putArray("articles");
+        ObjectNode a = Json.newObject();
+        a.put("description", "amazing victory love 😊");
+        arts.add(a);
+        when(resp.asJson()).thenReturn(root);
+
+        SentimentService svc = new SentimentService(ws, cfg);
+        String result = svc.sentimentForQuery("ai").toCompletableFuture().join();
+
+        assertEquals(":-)", result);
     }
 }
