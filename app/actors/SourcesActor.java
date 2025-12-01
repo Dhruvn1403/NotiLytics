@@ -8,15 +8,24 @@ import org.apache.pekko.actor.typed.javadsl.*;
 
 import java.util.List;
 
+/**
+ * Actor wrapper around NewsSources service (Monil Tailor).
+ * Fetches news sources asynchronously and sends results to a WebSocket session.
+ *
+ * @author Monil Tailor
+ */
 public class SourcesActor extends AbstractBehavior<SourcesActor.Command> {
 
+    /** Marker interface for all actor commands */
     public interface Command {}
 
+    /** Command to fetch news sources with optional filters */
     public record Fetch(String country, String category, String lang) implements Command {}
 
     private final ActorRef<UserSessionActor.WsMessage> out;
     private final NewsSources newsSources;
 
+    /** Factory method to create actor */
     public static Behavior<Command> create(
             ActorRef<UserSessionActor.WsMessage> out,
             NewsSources newsSources
@@ -41,6 +50,10 @@ public class SourcesActor extends AbstractBehavior<SourcesActor.Command> {
                 .build();
     }
 
+    /**
+     * Handles the Fetch command by calling NewsSources service asynchronously.
+     * Sends the resulting list of SourceInfo objects to the WebSocket client.
+     */
     private Behavior<Command> onFetch(Fetch msg) {
         newsSources.fetchSources(msg.country(), msg.category(), msg.lang())
                 .thenAccept(list ->

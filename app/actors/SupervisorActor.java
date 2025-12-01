@@ -6,6 +6,7 @@ import org.apache.pekko.actor.typed.javadsl.Behaviors;
 
 /**
  * SupervisorActor that can supervise children with restart on failure.
+ * @author Group
  */
 public class SupervisorActor {
 

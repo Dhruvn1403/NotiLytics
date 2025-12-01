@@ -7,6 +7,14 @@ import services.*;
 import java.util.*;
 import java.util.UUID;
 
+/**
+ * Actor wrapper around NewsSources service.
+ * Fetches news sources asynchronously and sends results to a WebSocket session.
+ *
+ * Handles the Fetch command to retrieve sources filtered by country, category, and language.
+ *
+ * @author Group
+ */
 public class UserSessionActor extends AbstractBehavior<UserSessionActor.Command> {
 
     public interface Command {}
