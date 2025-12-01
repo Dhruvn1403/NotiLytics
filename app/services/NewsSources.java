@@ -14,8 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import play.libs.ws.WSClient;
 
+/**
+ * @author Monil Tailor
+ *
+ * Service class for fetching news sources from NewsAPI.
+ * Provides a method to retrieve a list of sources filtered by country, category, and language.
+ * Supports asynchronous operation via CompletionStage.
+ */
 public class NewsSources {
     private final WSClient ws;
     private final Config config;
@@ -28,6 +34,9 @@ public class NewsSources {
 
     private static final String API_KEY = "cf69ac0f4dd54ce4a2a5e00503ecaf77";
 
+    /**
+     * Default constructor. Dependency injection supported.
+     */
     // @Inject
     // public NewsSources() {
     // }
@@ -35,13 +44,15 @@ public class NewsSources {
     /**
      * Single public method replacing the old interface.
      */
-    // public CompletionStage<List<SourceInfo>> fetchSources(String country, String
-    // category, String language) {
+    public CompletionStage<List<SourceInfo>> fetchSources(String country,
+                                                          String category,
+                                                          String language) {
 
-    // return CompletableFuture.supplyAsync(() -> {
-    // try {
-    // StringBuilder urlStr = new StringBuilder(
-    // "https://newsapi.org/v2/sources?apiKey=" + API_KEY);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                StringBuilder urlStr = new StringBuilder(
+                    "https://newsapi.org/v2/sources?apiKey=" + API_KEY
+                );
 
     // if (!country.isEmpty())
     // urlStr.append("&country=").append(country);

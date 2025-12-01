@@ -12,8 +12,11 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
- * Single merged SentimentService class.
- * No interface, no separate implementation file.
+ * SentimentService class to determine the overall sentiment of news articles
+ * related to a given query. Returns one of three emoticons:
+ * ":-)" for positive sentiment, ":-(" for negative, or ":-|" for neutral.
+ *
+ * Uses a simple heuristic approach with predefined happy and sad word sets.
  *
  * @author Jaiminkumar Mayani
  */
@@ -23,7 +26,7 @@ public final class SentimentService {
     private final WSClient ws;
     private final String apiKey;
 
-    /* ---------- happy / sad word sets ---------- */
+    /* ---------- Predefined happy / sad word sets ---------- */
     private static final Set<String> HAPPY = Set.of(
             "joy", "happy", "excited", "love", "amazing", "awesome", "fantastic",
             "great", "wonderful", "good", "best", "win", "victory", "celebrate",
@@ -36,15 +39,23 @@ public final class SentimentService {
             "😢", "😭", "😞", "💔", "👎", ":(", ":-(", "tragedy", "dark"
     );
 
+    /**
+     * Constructor to initialize the service with WSClient and API key.
+     * @param ws Play WSClient for HTTP requests
+     * @param config Config object (currently API key hardcoded for simplicity)
+     */
     @Inject
     public SentimentService(WSClient ws, com.typesafe.config.Config config) {
         this.ws = ws;
-        // Load API key (you can improve this later)
         this.apiKey = "cf69ac0f4dd54ce4a2a5e00503ecaf77";
     }
 
     /**
-     * Returns one of ":-)", ":-(" or ":-|" for the given query.
+     * Computes sentiment for a given query asynchronously.
+     * Fetches up to 50 news articles and aggregates their sentiment.
+     *
+     * @param query Query string
+     * @return CompletionStage of one of ":-)", ":-(", or ":-|"
      */
     public CompletionStage<String> sentimentForQuery(String query) {
         WSRequest req = ws.url("https://newsapi.org/v2/everything")
@@ -59,7 +70,7 @@ public final class SentimentService {
                 .thenApply(this::aggregateSentiment);
     }
 
-    /* ---------- Helper: Extract article descriptions ---------- */
+    /* ---------- Helper: Extract article descriptions from JSON ---------- */
     private List<String> extractDescriptions(JsonNode root) {
         JsonNode arts = root.path("articles");
         if (!arts.isArray()) return List.of();
@@ -70,7 +81,7 @@ public final class SentimentService {
                 .collect(Collectors.toList());
     }
 
-    /* ---------- Helper: Aggregate sentiment ---------- */
+    /* ---------- Helper: Aggregate sentiment from list of descriptions ---------- */
     private String aggregateSentiment(List<String> descriptions) {
         if (descriptions.isEmpty()) return ":-|";
 
@@ -93,5 +104,14 @@ public final class SentimentService {
         if (happyRatio > 0.7) return ":-)";
         if (sadRatio   > 0.7) return ":-(";
         return ":-|";
+    }
+
+    /**
+     * Synchronous stub method (for testing) returning query string directly.
+     * @param query Input query
+     * @return Same query string
+     */
+    public String sentimentForQuerySync(String query) {
+        return query;
     }
 }

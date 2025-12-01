@@ -1,10 +1,21 @@
 package services;
 
-//    @author Dhruv Patel
+/**
+ * @author Dhruv Patel
+ *
+ * Service class to compute readability scores for a given text.
+ * Implements the Flesch–Kincaid Grade Level formula.
+ * Provides static utility methods for calculating readability and syllable count.
+ */
 public class ReadabilityService {
 
-    // Calculate Flesch–Kincaid Grade Level for given text
-    //    @author Dhruv Patel
+    /**
+     * Calculates the Flesch–Kincaid Grade Level for the given text.
+     * Returns a readability score rounded to 2 decimal places.
+     *
+     * @param text Input text to analyze
+     * @return Readability score (Flesch–Kincaid Grade Level)
+     */
     public static double calculateReadability(String text) {
         if (text == null || text.isEmpty()) {
             return 0.0;
@@ -23,7 +34,13 @@ public class ReadabilityService {
         return Math.round(fleschKincaid * 100.0) / 100.0; // round to 2 decimals
     }
 
-    //    @author Dhruv Patel
+    /**
+     * Counts approximate number of syllables in the given text.
+     * Uses a simple heuristic: counts vowel groups, adjusts for silent 'e'.
+     *
+     * @param text Input text
+     * @return Estimated syllable count
+     */
     private static int countSyllables(String text) {
         text = text.toLowerCase();
         int count = 0;

@@ -17,8 +17,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Unified NewsAPI client providing real and stub functionality
- * in a single file.
+ * @author group
+ *
+ * NewsApiClient provides a unified client for interacting with NewsAPI.org.
+ * It supports both real API calls (with a valid API key) and stubbed responses for testing.
+ *
+ * Features:
+ * - Fetch articles for a search query
+ * - Fetch news source profiles
+ * - Stub mode if API key is missing
+ *
+ * Dependencies:
+ * - WSClient for HTTP requests
+ * - Config for application configuration
  */
 public final class NewsApiClient {
 
@@ -27,6 +38,13 @@ public final class NewsApiClient {
     private final String apiKey;
     private final boolean useStub;
 
+    /**
+     * Constructor: initializes the client with WSClient and configuration.
+     * Automatically enables stub mode if no API key is found.
+     *
+     * @param ws WSClient for HTTP calls
+     * @param config Application configuration
+     */
     @Inject
     public NewsApiClient(WSClient ws, Config config) {
         this.ws = ws;
@@ -47,6 +65,12 @@ public final class NewsApiClient {
 
     /** ---------------------- STUB MODE ------------------------- */
 
+    /**
+     * Returns a stubbed SourceInfo for testing purposes.
+     *
+     * @param sourceName Name of the source
+     * @return CompletionStage<SourceInfo> with mock data
+     */
     private CompletionStage<SourceInfo> stubSourceProfile(String sourceName) {
         var article = new Article(
                 "Sample article about " + sourceName,
@@ -66,6 +90,13 @@ public final class NewsApiClient {
         return CompletableFuture.completedFuture(info);
     }
 
+    /**
+     * Returns a stubbed list of articles for testing purposes.
+     *
+     * @param query Search query
+     * @param limit Number of articles
+     * @return CompletionStage<List<Article>> with mock articles
+     */
     private CompletionStage<List<Article>> stubSearch(String query, int limit) {
         List<Article> mock = List.of(
                 new Article(
@@ -94,11 +125,23 @@ public final class NewsApiClient {
 
     /** ---------------------- REAL IMPLEMENTATION ------------------------- */
 
+    /**
+     * Adds the API key to the request headers and query parameters.
+     * @param req WSRequest
+     * @return WSRequest with API key added
+     */
     private WSRequest withKey(WSRequest req) {
         return req.addHeader("X-Api-Key", apiKey)
                   .addQueryParameter("apiKey", apiKey);
     }
 
+    /**
+     * Fetches a news source profile by its name.
+     * Uses stub mode if API key is missing.
+     *
+     * @param sourceName Name of the news source
+     * @return CompletionStage<SourceInfo> with source info and top articles
+     */
     public CompletionStage<SourceInfo> sourceProfileByName(String sourceName) {
 
         if (useStub) return stubSourceProfile(sourceName);
@@ -186,6 +229,14 @@ public final class NewsApiClient {
     }
 
 
+    /**
+     * Searches for articles based on query and limit.
+     * Uses stub mode if API key is missing.
+     *
+     * @param query Search query
+     * @param limit Maximum number of articles to fetch
+     * @return CompletionStage<List<Article>> list of articles
+     */
     public CompletionStage<List<Article>> searchArticles(String query, int limit) {
 
         if (useStub) return stubSearch(query, limit);
@@ -233,6 +284,11 @@ public final class NewsApiClient {
 
     /** ---------------------- Helper Methods ------------------------- */
 
+    /**
+     * Validates HTTP response from NewsAPI and extracts JSON if valid.
+     * @param resp WSResponse
+     * @return JsonNode or null if invalid
+     */
     private JsonNode handle(WSResponse resp) {
         int status = resp.getStatus();
         JsonNode body = safeJson(resp);
