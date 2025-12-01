@@ -50,22 +50,20 @@ public class HomeController extends Controller {
     private final LinkedHashMap<String, Tuple2<List<Article>, Double>> accumulatedResults = new LinkedHashMap<>();
     private static final int MAX_KEYWORDS = 10;
 
-    @Inject
+    
     private SentimentService sentimentService;
-
-    @Inject
     private NewsApiClient newsApiClient;  
 
     //    @author Monil Tailor
-    @Inject
+
     private NewsSources NewsSources;
-    @Inject
     private ReadabilityService readabilityService;
 
     // 🔥 ActorSystem injected (required for WebSockets)
     private final ActorSystem classicActorSystem;
     private final Materializer materializer;
 
+    @Inject
     public HomeController(
             ActorSystem classicActorSystem,
             Materializer materializer,
