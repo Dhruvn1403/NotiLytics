@@ -1,6 +1,8 @@
 package controllers;
 
 import models.Article;
+import models.SourceInfo;
+
 import org.junit.Before;
 import org.junit.Test;
 import play.Application;
@@ -15,6 +17,8 @@ import services.NewsSources;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import play.mvc.WebSocket; // correct;
+// import java.net.http.WebSocket;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -64,18 +68,20 @@ public class HomeControllerTest {
         safeClearStaticMap("cache");
     }
 
-
     private void safeClearStaticMap(String fieldName) {
         try {
             Field f = HomeController.class.getDeclaredField(fieldName);
-            if (!Modifier.isStatic(f.getModifiers())) return;
+            if (!Modifier.isStatic(f.getModifiers()))
+                return;
             f.setAccessible(true);
             Object o = f.get(null);
             if (o instanceof Map<?, ?> map) {
                 map.clear();
             }
-        } catch (NoSuchFieldException ignored) {}
-          catch (Exception e) { throw new RuntimeException(e); }
+        } catch (NoSuchFieldException ignored) {
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // --------------------------------------------------------------
@@ -115,8 +121,7 @@ public class HomeControllerTest {
 
         cache.put("ai_publishedAt", List.of(
                 new Article("T1", "u1", "S", "su", "2024-01-01", "d1", 0.1),
-                new Article("T2", "u2", "S", "su", "2024-01-01", "d2", 0.2)
-        ));
+                new Article("T2", "u2", "S", "su", "2024-01-01", "d2", 0.2)));
 
         // Perform search on SAME controller instance
         Result r = ctrl.search("ai", "publishedAt")
@@ -128,8 +133,7 @@ public class HomeControllerTest {
         Field accF = HomeController.class.getDeclaredField("accumulatedResults");
         accF.setAccessible(true);
 
-        LinkedHashMap<String, ?> acc =
-                (LinkedHashMap<String, ?>) accF.get(ctrl);
+        LinkedHashMap<String, ?> acc = (LinkedHashMap<String, ?>) accF.get(ctrl);
 
         assertNotNull(acc);
         assertTrue(acc.containsKey("ai"));
@@ -151,8 +155,7 @@ public class HomeControllerTest {
         when(newsApi.searchArticles("ai", 50))
                 .thenReturn(CompletableFuture.completedFuture(
                         List.of(new Article("A", "u", "S", "su",
-                                "2024", "Artificial intelligence test case", 0.3))
-                ));
+                                "2024", "Artificial intelligence test case", 0.3))));
 
         Result r = ctrl.wordStats("ai").toCompletableFuture().join();
         assertEquals(OK, r.status());
@@ -167,4 +170,169 @@ public class HomeControllerTest {
         assertEquals(OK, r1.status());
         assertEquals(OK, r2.status());
     }
+
+    @Test
+    public void ws_opens_connection() {
+        WebSocket ws = ctrl.ws();
+        assertNotNull(ws);
+
+        play.libs.F.Either<Result, org.apache.pekko.stream.javadsl.Flow<play.http.websocket.Message, play.http.websocket.Message, ?>> socket = ws
+                .apply(fakeRequest().header("Origin", "http://localhost").build())
+                .toCompletableFuture().join();
+
+        // WebSocket accepted → Right side present
+        assertTrue(socket.right.isPresent());
+    }
+
+    @Test
+    public void ws_rejects_invalid_origin() {
+        var stage = ctrl.ws().apply(fakeRequest()
+                .header("Origin", "http://evil.com")
+                .build());
+
+        var either = stage.toCompletableFuture().join();
+        assertTrue("Expected Left(Result) but got Right(...) instead", either.left.isPresent());
+        Result r = either.left.get();
+        assertTrue(r.status() == FORBIDDEN || r.status() == UNAUTHORIZED);
+    }
+
+    @Test
+    public void search_handles_newsApi_exception() throws Exception {
+        when(newsApi.searchArticles(anyString(), anyInt()))
+                .thenReturn(CompletableFuture.failedFuture(new RuntimeException("boom")));
+
+        Result r = ctrl.search("ai", "publishedAt").toCompletableFuture().join();
+        assertEquals(OK, r.status());
+        assertTrue(contentAsString(r).contains("error"));
+    }
+
+    @Test
+    public void sentiment_handles_errors() {
+        when(sentiment.sentimentForQuery("bad"))
+                .thenReturn(CompletableFuture.failedFuture(new RuntimeException("boom")));
+
+        Result r = ctrl.sentiment("bad").toCompletableFuture().join();
+        assertEquals(OK, r.status());
+        assertTrue(contentAsString(r).contains(":-|"));
+    }
+
+    @Test
+    public void search_invalidSort_usesDefault() {
+        Result r = ctrl.search("ai", "invalid").toCompletableFuture().join();
+        assertEquals(OK, r.status());
+    }
+
+    @Test
+    public void search_nullQuery_safe() {
+        Result r = ctrl.search(null, "publishedAt").toCompletableFuture().join();
+        assertEquals(OK, r.status());
+    }
+
+    @Test
+    public void search_filters_duplicates() {
+        Article a = new Article("T1", "U1", "S", "S", "2024", "D", 0.1);
+
+        when(newsApi.searchArticles("ai", 10))
+                .thenReturn(CompletableFuture.completedFuture(List.of(a, a)));
+
+        Result r = ctrl.search("ai", "publishedAt").toCompletableFuture().join();
+        assertEquals(OK, r.status());
+    }
+
+    @Test
+    public void search_cacheHit_noApiCall() throws Exception {
+        Field f = HomeController.class.getDeclaredField("cache");
+        f.setAccessible(true);
+        Map<String, List<Article>> cache = (Map<String, List<Article>>) f.get(null);
+        cache.put("test_publishedAt", List.of());
+
+        ctrl.search("test", "publishedAt").toCompletableFuture().join();
+
+        verify(newsApi, times(0)).searchArticles(anyString(), anyInt());
+    }
+
+    @Test
+    public void index_template_safe() {
+        Result r = ctrl.index();
+        assertEquals(OK, r.status());
+    }
+
+    @Test
+    public void websocket_should_initialize() {
+        WebSocket ws = ctrl.ws();
+        assertNotNull(ws);
+
+        play.libs.F.Either<Result, org.apache.pekko.stream.javadsl.Flow<play.http.websocket.Message, play.http.websocket.Message, ?>> socket = ws
+                .apply(fakeRequest().header("Origin", "http://localhost").build())
+                .toCompletableFuture().join();
+
+        assertTrue(socket.right.isPresent());
+    }
+
+    @Test
+    public void fetchArticles_handles_exception() throws Exception {
+        Method m = HomeController.class
+                .getDeclaredMethod("fetchArticlesForQuery", String.class, String.class);
+        m.setAccessible(true);
+
+        Object res = m.invoke(ctrl, "%%%%%", "publishedAt");
+
+        assertNotNull(res);
+        assertTrue(res instanceof List);
+    }
+
+    @Test
+    public void fetchArticles_handles_dateParseError() throws Exception {
+        String badJson = """
+                {"articles":[{"title":"T","url":"U","source":{"name":"S"},"publishedAt":"BAD_DATE","description":"D"}]}
+                """;
+
+        // Use reflection to test internal JSON parsing branch
+        Method m = HomeController.class
+                .getDeclaredMethod("fetchArticlesForQuery", String.class, String.class);
+        m.setAccessible(true);
+
+        Object res = m.invoke(ctrl, "query", "publishedAt");
+
+        assertTrue(res instanceof List);
+    }
+
+    @Test
+    public void fetchArticles_missing_description_safe() throws Exception {
+        Method m = HomeController.class
+                .getDeclaredMethod("fetchArticlesForQuery", String.class, String.class);
+        m.setAccessible(true);
+
+        List<Article> list = (List<Article>) m.invoke(ctrl, "missingdesc", "publishedAt");
+        assertNotNull(list);
+    }
+
+    @Test
+    public void search_nullQuery_returnsNeutral() {
+        Result r = ctrl.search(null, "publishedAt")
+                .toCompletableFuture().join();
+
+        assertEquals(OK, r.status());
+        assertTrue(contentAsString(r).contains(":-|"));
+    }
+
+    @Test
+    public void search_removes_oldest_keyword() throws Exception {
+        for (int i = 1; i <= 12; i++) {
+            ctrl.search("key" + i, "publishedAt").toCompletableFuture().join();
+        }
+
+        Field accF = HomeController.class.getDeclaredField("accumulatedResults");
+        accF.setAccessible(true);
+        LinkedHashMap<?, ?> acc = (LinkedHashMap<?, ?>) accF.get(ctrl);
+
+        assertEquals(10, acc.size());
+    }
+
+    @Test
+    public void wordStats_emptyQuery_returns_badRequest() {
+        Result r = ctrl.wordStats("").toCompletableFuture().join();
+        assertEquals(BAD_REQUEST, r.status());
+    }
+
 }

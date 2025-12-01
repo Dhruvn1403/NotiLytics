@@ -39,12 +39,11 @@ import org.apache.pekko.actor.ActorSystem;
 import org.apache.pekko.stream.Materializer;
 import org.apache.pekko.actor.typed.javadsl.Adapter;
 
-
 //    @author Dhruv Patel, Jaiminkumar Mayani, Monil Tailor
 public class HomeController extends Controller {
 
     private static final Map<String, List<Article>> cache = new ConcurrentHashMap<>();
-//    private static final Deque<String> recentQueries = new LinkedList<>();
+    // private static final Deque<String> recentQueries = new LinkedList<>();
 
     // Accumulated results for stacked display: keyword -> top 10 articles
     private final LinkedHashMap<String, Tuple2<List<Article>, Double>> accumulatedResults = new LinkedHashMap<>();
@@ -54,9 +53,9 @@ public class HomeController extends Controller {
     private SentimentService sentimentService;
 
     @Inject
-    private NewsApiClient newsApiClient;  
+    private NewsApiClient newsApiClient;
 
-    //    @author Monil Tailor
+    // @author Monil Tailor
     @Inject
     private NewsSources NewsSources;
 
@@ -70,33 +69,31 @@ public class HomeController extends Controller {
         this.materializer = materializer;
     }
 
-    //    @author Dhruv Patel
+    // @author Dhruv Patel
     public Result index() {
         return ok(index.render(new LinkedHashMap<>(), ":-|"));
     }
 
-    //    @author Dhruv Patel
+    // @author Dhruv Patel
     public CompletionStage<Result> search(String query, String sort) {
         if (query == null || query.trim().isEmpty()) {
             return CompletableFuture.completedFuture(
-                    ok(index.render(new LinkedHashMap<>(), ":-|"))
-            );
+                    ok(index.render(new LinkedHashMap<>(), ":-|")));
         }
 
         // Fetch top 10 articles for this query (use cache if available)
         List<Article> articles = cache.computeIfAbsent(query + "_" + sort,
-                        key -> fetchArticlesForQuery(query, sort))
+                key -> fetchArticlesForQuery(query, sort))
                 .stream()
                 .limit(10)
                 .collect(Collectors.toList());
 
-//        System.out.println(articles);
+        // System.out.println(articles);
         // Calc Average Readability
         double avgReadability = articles.stream()
                 .mapToDouble(Article::getReadabilityScore)
                 .average()
                 .orElse(0.0);
-
 
         // Add to accumulatedResults (newest keyword on top)
         accumulatedResults.put(query, new Tuple2<>(articles, avgReadability));
@@ -108,16 +105,15 @@ public class HomeController extends Controller {
         }
 
         // Convert to LinkedHashMap before passing to the view
-//        LinkedHashMap<String, Map.Entry<List<Article>, Double>> linkedResults =
-//                new LinkedHashMap<>(accumulatedResults);
-
+        // LinkedHashMap<String, Map.Entry<List<Article>, Double>> linkedResults =
+        // new LinkedHashMap<>(accumulatedResults);
 
         // Fetch sentiment for this query
         return sentimentService.sentimentForQuery(query)
                 .thenApply(emoticon -> ok(index.render(accumulatedResults, emoticon)));
     }
 
-    //    @author Dhruv Patel
+    // @author Dhruv Patel
     private List<Article> fetchArticlesForQuery(String query, String sort) {
         // Your existing fetchArticlesForQuery code remains unchanged
         List<Article> results = new ArrayList<>();
@@ -128,18 +124,17 @@ public class HomeController extends Controller {
                     + "&pageSize=50&sortBy=" + sort
                     + "&apiKey=" + apiKey;
 
-
             java.net.URL url = new java.net.URL(urlStr);
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
 
             if (conn.getResponseCode() == 200) {
                 java.io.BufferedReader in = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(conn.getInputStream())
-                );
+                        new java.io.InputStreamReader(conn.getInputStream()));
                 StringBuilder content = new StringBuilder();
                 String line;
-                while ((line = in.readLine()) != null) content.append(line);
+                while ((line = in.readLine()) != null)
+                    content.append(line);
                 in.close();
 
                 JsonNode root = Json.parse(content.toString());
@@ -184,15 +179,21 @@ public class HomeController extends Controller {
                 .thenApply(sourcesList -> ok(views.html.newsSources.render(sourcesList)));
     }
 
-
-
-    //    @author Jaimin Mayani
+    // @author Jaimin Mayani
     public CompletionStage<Result> sentiment(String query) {
         return sentimentService.sentimentForQuery(query)
-                .thenApply(emo -> ok(Json.toJson(Map.of("sentiment", emo))));
+                .handle((result, error) -> {
+                    if (error != null) {
+                        return ok(Json.newObject()
+                                .put("sentiment", ":-|")
+                                .put("error", error.getMessage()));
+                    }
+                    return ok(Json.newObject()
+                            .put("sentiment", result));
+                });
     }
 
-    //    @author Varun Oza
+    // @author Varun Oza
     public CompletionStage<Result> wordStats(String query) {
         if (query == null || query.trim().isEmpty()) {
             return CompletableFuture.completedFuture(badRequest("Query cannot be empty."));
@@ -217,8 +218,7 @@ public class HomeController extends Controller {
                             Map.Entry::getKey,
                             Map.Entry::getValue,
                             (a, b) -> a,
-                            LinkedHashMap::new
-                    ));
+                            LinkedHashMap::new));
 
             System.out.println(">>> [WordStats] Computed " + sorted.size() + " words for query: " + query);
             return ok(views.html.wordStats.render(query, sorted));
@@ -230,22 +230,29 @@ public class HomeController extends Controller {
                 .thenApply((SourceInfo info) -> ok(source.render(info)));
     }
     // ============================================================
-    //          WEBSOCKET ENDPOINT (DELIVERY 2 ADDITION) 
+    // WEBSOCKET ENDPOINT (DELIVERY 2 ADDITION)
     // ============================================================
 
     public WebSocket ws() {
-        return WebSocket.Text.accept(request ->
-            ActorFlow.actorRef(
-                out -> Adapter.props(
-                    () -> UserSessionActor.create(
-                            Adapter.toTyped(out),
-                            newsApiClient,
-                            NewsSources
-                    )
-                ),
-                classicActorSystem,
-                materializer
-            )
-        );
+        return WebSocket.Text.acceptOrResult(request -> {
+            Optional<String> originOpt = request.header("Origin");
+            String origin = originOpt.orElse("");
+
+            if (!origin.equals("http://localhost") && !origin.equals("http://localhost:9000")) {
+                return CompletableFuture.completedFuture(
+                        play.libs.F.Either.Left(forbidden("Invalid origin")));
+            }
+
+            return CompletableFuture.completedFuture(
+                    play.libs.F.Either.Right(
+                            ActorFlow.actorRef(
+                                    out -> Adapter.props(
+                                            () -> UserSessionActor.create(
+                                                    Adapter.toTyped(out),
+                                                    newsApiClient,
+                                                    NewsSources)),
+                                    classicActorSystem,
+                                    materializer)));
+        });
     }
 }
