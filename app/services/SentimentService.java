@@ -94,4 +94,8 @@ public final class SentimentService {
         if (sadRatio   > 0.7) return ":-(";
         return ":-|";
     }
+
+    public String sentimentForQuerySync(String query) {
+        return query;
+    }
 }

@@ -59,15 +59,27 @@ public class HomeController extends Controller {
     //    @author Monil Tailor
     @Inject
     private NewsSources NewsSources;
+    @Inject
+    private ReadabilityService readabilityService;
 
     // 🔥 ActorSystem injected (required for WebSockets)
     private final ActorSystem classicActorSystem;
     private final Materializer materializer;
 
-    @Inject
-    public HomeController(ActorSystem classicActorSystem, Materializer materializer) {
+    public HomeController(
+            ActorSystem classicActorSystem,
+            Materializer materializer,
+            NewsApiClient newsApiClient,
+            NewsSources newsSources,
+            SentimentService sentimentService,
+            ReadabilityService readabilityService
+    ) {
         this.classicActorSystem = classicActorSystem;
         this.materializer = materializer;
+        this.newsApiClient = newsApiClient;
+        this.NewsSources = newsSources;
+        this.sentimentService = sentimentService;
+        this.readabilityService = readabilityService;
     }
 
     //    @author Dhruv Patel
@@ -240,7 +252,9 @@ public class HomeController extends Controller {
                     () -> UserSessionActor.create(
                             Adapter.toTyped(out),
                             newsApiClient,
-                            NewsSources
+                            NewsSources,
+                            sentimentService,
+                            readabilityService
                     )
                 ),
                 classicActorSystem,
