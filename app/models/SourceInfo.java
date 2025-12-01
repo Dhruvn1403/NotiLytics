@@ -1,15 +1,28 @@
-/**
- * Represents metadata of a news source and recent articles (for profile view).
- * @author Manush Shah
- */
-
 package models;
+
 import java.util.List;
 
 /**
- * Immutable model describing a news source plus the most recent articles.
- * Using a Java record keeps it concise and generates accessors:
- *   id(), name(), description(), url(), category(), language(), country(), articles()
+ * Immutable model representing metadata of a news source along with
+ * its recent articles. Designed for profile view or detailed source display.
+ *
+ * <p>Fields:
+ * <ul>
+ *     <li>{@code id} - Unique identifier for the source (from NewsAPI or internal).</li>
+ *     <li>{@code name} - Name of the source.</li>
+ *     <li>{@code description} - Description or summary of the source.</li>
+ *     <li>{@code url} - Homepage URL of the source.</li>
+ *     <li>{@code category} - News category (e.g., general, technology, sports).</li>
+ *     <li>{@code language} - Language code (e.g., en for English).</li>
+ *     <li>{@code country} - Country code (e.g., us for United States).</li>
+ *     <li>{@code articles} - List of recent {@link Article} objects from this source.</li>
+ * </ul>
+ * </p>
+ *
+ * Using a Java record keeps the class concise and provides automatically
+ * generated accessors for each field.
+ *
+ * @author Manush Shah
  */
 public record SourceInfo(
         String id,

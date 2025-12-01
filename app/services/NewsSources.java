@@ -14,15 +14,31 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+/**
+ * @author Monil Tailor
+ *
+ * Service class for fetching news sources from NewsAPI.
+ * Provides a method to retrieve a list of sources filtered by country, category, and language.
+ * Supports asynchronous operation via CompletionStage.
+ */
 public class NewsSources {
 
     private static final String API_KEY = "cf69ac0f4dd54ce4a2a5e00503ecaf77";
 
+    /**
+     * Default constructor. Dependency injection supported.
+     */
     @Inject
     public NewsSources() {}
 
     /**
-     * Single public method replacing the old interface.
+     * Fetches news sources from the NewsAPI based on optional filters.
+     * The results are returned asynchronously as a CompletionStage.
+     *
+     * @param country ISO 3166-1 country code (e.g., "us") or empty string for no filter
+     * @param category News category (e.g., "technology") or empty string for no filter
+     * @param language ISO 639-1 language code (e.g., "en") or empty string for no filter
+     * @return CompletionStage<List<SourceInfo>> containing matching sources
      */
     public CompletionStage<List<SourceInfo>> fetchSources(String country,
                                                           String category,
